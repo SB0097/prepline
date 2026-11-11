@@ -25,6 +25,8 @@ export type Schritt = {
   uci: string;
   /** Karten-Schlüssel bei eigenen Zügen. */
   karte?: string;
+  /** Kommentar aus der PGN zu diesem Zug (wird neutral angezeigt). */
+  kommentar?: string;
 };
 
 export type Uebungsauswahl = {
@@ -87,10 +89,23 @@ export function uebungslinie(
         : auswahl.neu.has(schluessel)
           ? 'neu'
           : 'mitspielen';
-      schritte.push({ art, fen, san: naechster.san, uci: naechster.uci, karte: schluessel });
+      schritte.push({
+        art,
+        fen,
+        san: naechster.san,
+        uci: naechster.uci,
+        karte: schluessel,
+        ...(naechster.kommentar && { kommentar: naechster.kommentar }),
+      });
     } else {
       naechster = gegnerzugWaehlen(kinder, offen, zufall);
-      schritte.push({ art: 'gegner', fen, san: naechster.san, uci: naechster.uci });
+      schritte.push({
+        art: 'gegner',
+        fen,
+        san: naechster.san,
+        uci: naechster.uci,
+        ...(naechster.kommentar && { kommentar: naechster.kommentar }),
+      });
     }
     fen = naechster.fen;
     kinder = naechster.kinder;

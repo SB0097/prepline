@@ -7,6 +7,12 @@ import { FARBEN } from './farben';
 
 export const RUNDUNG = 22;
 
+/** Zurück zur vorigen Seite; gibt es keine (z. B. nach einem Neustart), zur Startseite. */
+export function zurueck(): void {
+  if (router.canGoBack()) router.back();
+  else router.replace('/');
+}
+
 export function Knopf({
   titel,
   onPress,
@@ -82,7 +88,7 @@ export function ZurueckKopf({ titel }: { titel: string }) {
   return (
     <View style={stile.zurueckZeile}>
       <Pressable
-        onPress={() => router.back()}
+        onPress={zurueck}
         hitSlop={16}
         accessibilityRole="button"
         accessibilityLabel="Zurück"
