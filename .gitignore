@@ -1,0 +1,57 @@
+# --- Abhängigkeiten ---
+node_modules/
+.pnp.*
+
+# --- Build-Ausgaben ---
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# --- Expo / React Native ---
+.expo/
+.expo-shared/
+web-build/
+expo-env.d.ts
+# Native Ordner werden von "expo prebuild" erzeugt (Continuous Native Generation)
+app/android/
+app/ios/
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+*.apk
+*.aab
+
+# --- Geheimnisse (NIE committen) ---
+.env
+.env.*
+!.env.example
+*service-account*.json
+*.pem
+*.key
+secrets/
+
+# --- Lokale Daten ---
+*.sqlite
+*.db
+
+# --- Logs ---
+*.log
+npm-debug.log*
+
+# --- Betriebssystem / Editor ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+
+# --- Expo/Metro-Reste ---
+.kotlin/
+.metro-health-check*
+*.orig.*
