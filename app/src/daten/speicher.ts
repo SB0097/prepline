@@ -21,6 +21,8 @@ export type RepertoireKopf = {
   name: string;
   seite: Seite;
   offiziell: boolean;
+  /** Schlüssel des Sammlungseintrags bei mitgelieferten Eröffnungen, sonst null. */
+  quelle: string | null;
   erstellt: number;
 };
 
@@ -31,6 +33,7 @@ type RepertoireZeile = {
   name: string;
   seite: Seite;
   offiziell: number;
+  quelle: string | null;
   start_fen: string;
   baum: string;
   erstellt: number;
@@ -40,16 +43,17 @@ type RepertoireZeile = {
 
 export async function repertoireAnlegen(
   sql: Sql,
-  daten: { name: string; seite: Seite; baum: Baum; offiziell?: boolean },
+  daten: { name: string; seite: Seite; baum: Baum; offiziell?: boolean; quelle?: string },
   jetzt = Date.now(),
 ): Promise<number> {
   const r = await sql.lauf(
-    `INSERT INTO repertoire (name, seite, offiziell, start_fen, baum, erstellt, geaendert)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO repertoire (name, seite, offiziell, quelle, start_fen, baum, erstellt, geaendert)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       daten.name,
       daten.seite,
       daten.offiziell ? 1 : 0,
+      daten.quelle ?? null,
       daten.baum.startFen,
       JSON.stringify(daten.baum.zuege),
       jetzt,
@@ -61,7 +65,7 @@ export async function repertoireAnlegen(
 
 export async function repertoireListe(sql: Sql): Promise<RepertoireKopf[]> {
   const zeilen = await sql.alle<Omit<RepertoireZeile, 'start_fen' | 'baum'>>(
-    'SELECT id, name, seite, offiziell, erstellt FROM repertoire ORDER BY seite, name COLLATE NOCASE',
+    'SELECT id, name, seite, offiziell, quelle, erstellt FROM repertoire ORDER BY seite, name COLLATE NOCASE',
   );
   return zeilen.map((z) => ({ ...z, offiziell: z.offiziell === 1 }));
 }
@@ -74,6 +78,7 @@ export async function repertoireLaden(sql: Sql, id: number): Promise<Repertoire 
     name: z.name,
     seite: z.seite,
     offiziell: z.offiziell === 1,
+    quelle: z.quelle,
     erstellt: z.erstellt,
     baum: { startFen: z.start_fen, zuege: JSON.parse(z.baum) as Zugknoten[] },
   };
@@ -125,6 +130,7 @@ export async function passendeRepertoires(
       name: z.name,
       seite: z.seite,
       offiziell: z.offiziell === 1,
+      quelle: z.quelle,
       erstellt: z.erstellt,
     }));
 }
