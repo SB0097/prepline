@@ -1,6 +1,6 @@
-# Schach-Eröffnungstrainer
+# Prepline
 
-Android-App zum Lernen des eigenen Eröffnungsrepertoires im Schach.
+Schach-Eröffnungstrainer für Android: Mit Prepline lernt man das eigene Eröffnungsrepertoire.
 Eröffnungen werden als PGN importiert, die App spielt die Züge des Gegners und fragt die eigenen Züge ab.
 Wiederholt wird nach dem Prinzip der verteilten Wiederholung (Spaced Repetition): Fehler kommen öfter dran, sichere Züge seltener.
 
