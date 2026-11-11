@@ -47,7 +47,8 @@
           "enforceContrast": false,
           "style": "light"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": false,

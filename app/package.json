@@ -10,7 +10,8 @@
     "test": "jest",
     "doctor": "expo-doctor",
     "logo": "node --no-warnings scripts/logo-erzeugen.mjs",
-    "figuren": "node --no-warnings scripts/figuren-erzeugen.mjs"
+    "figuren": "node --no-warnings scripts/figuren-erzeugen.mjs",
+    "lizenzen": "node --no-warnings scripts/lizenzen-erzeugen.mjs"
   },
   "jest": {
     "preset": "jest-expo"
@@ -25,6 +26,7 @@
     "expo-linking": "~58.0.16",
     "expo-navigation-bar": "~58.0.4",
     "expo-router": "~58.0.30",
+    "expo-sharing": "~58.0.23",
     "expo-splash-screen": "~58.0.14",
     "expo-sqlite": "~58.0.16",
     "expo-status-bar": "~58.0.5",
