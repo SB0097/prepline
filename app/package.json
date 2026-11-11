@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "doctor": "expo-doctor",
-    "logo": "node --no-warnings scripts/logo-erzeugen.mjs"
+    "logo": "node --no-warnings scripts/logo-erzeugen.mjs",
+    "figuren": "node --no-warnings scripts/figuren-erzeugen.mjs"
   },
   "jest": {
     "preset": "jest-expo"
