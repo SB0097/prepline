@@ -17,6 +17,7 @@
     "ts-jest": "^29.4.15"
   },
   "dependencies": {
-    "chess.js": "^1.4.0"
+    "chess.js": "^1.4.0",
+    "ts-fsrs": "^6.0.0"
   }
 }
