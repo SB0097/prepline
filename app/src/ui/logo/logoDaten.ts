@@ -1,14 +1,14 @@
-// Maße und Farben des App-Logos „Linienbrett“ (Serkan 11.11.2026: Variante 1, Smaragd).
+// Maße und Farben des App-Logos „Linienbrett“ (Serkan 11.11.2026: Variante 1; Farbe seit 11.11.2026 Mitternacht-Blau).
 // Ein Schachbrett nur aus Linien, darauf der Mattzug der Dame d1–h5–f7 (Schäfermatt),
 // ein Ring um den schwarzen König auf e8 und ein leuchtender Rahmen.
 // Einheiten: Ein Feld ist 12 breit, das Brett reicht von 0 bis 96.
 // Wird von der App (LogoGrafik.tsx) und vom Skript scripts/logo-erzeugen.mjs genutzt.
 
 export const LOGO_FARBEN = {
-  akzent: '#10B981',
-  hintergrund: '#0E1318',
-  gitter: '#46546A',
-  hell: '#E8EEF2',
+  akzent: '#6C8CFF',
+  hintergrund: '#0C1224',
+  gitter: '#3A4A75',
+  hell: '#EAF0FF',
 } as const;
 
 export const FELD = 12;
