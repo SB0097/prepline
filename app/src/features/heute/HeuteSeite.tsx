@@ -42,8 +42,11 @@ export function HeuteSeite() {
             </Text>
             <Text style={stile.akzent}>{daten.neu} neu</Text>
           </View>
-          {/* Das Training selbst kommt mit M6. */}
-          <Knopf titel="Training starten" onPress={() => undefined} aus />
+          <Knopf
+            titel={gesamt > 0 ? 'Training starten' : 'Für heute alles erledigt'}
+            onPress={() => router.push('/training')}
+            aus={gesamt === 0}
+          />
         </View>
       )}
       <View style={stile.reihe}>
