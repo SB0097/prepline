@@ -198,7 +198,7 @@ export function Menue({
 const stile = StyleSheet.create({
   hintergrund: {
     flex: 1,
-    backgroundColor: 'rgba(5, 8, 18, 0.72)',
+    backgroundColor: FARBEN.schleier,
     justifyContent: 'center',
     padding: 30,
   },
@@ -225,7 +225,7 @@ const stile = StyleSheet.create({
     position: 'absolute',
     right: 14,
     minWidth: 170,
-    backgroundColor: '#1C2647',
+    backgroundColor: FARBEN.karteHell,
     borderColor: FARBEN.linie,
     borderWidth: 1,
     borderRadius: 16,

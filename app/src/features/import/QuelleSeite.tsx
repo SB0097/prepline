@@ -130,7 +130,7 @@ const stile = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(108, 140, 255, 0.18)',
+    backgroundColor: FARBEN.akzentFlaeche,
     alignItems: 'center',
     justifyContent: 'center',
   },

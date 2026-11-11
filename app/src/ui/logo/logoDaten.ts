@@ -1,14 +1,14 @@
 // Form und Farben des App-Logos (Serkan 11.11.2026: Variante L1, der Coach-Bauer).
-// Ein Bauer aus einer leuchtenden blauen Linie mit kleinem Gesicht.
+// Ein Bauer aus einer leuchtenden blauen Linie mit kleinem Gesicht, auf neutralem Fast-Schwarz.
 // Einheiten: 100er Raster. Wird von der App (CoachBauer, Start-Animation) und vom Skript
 // scripts/logo-erzeugen.mjs genutzt – so sehen Symbol, Startbild und App gleich aus.
 
 export const LOGO_FARBEN = {
   akzent: '#6C8CFF',
-  hintergrund: '#0C1224',
+  hintergrund: '#0D0E11',
   /** Dezente Linien im Umfeld des Logos. */
-  gitter: '#3A4A75',
-  hell: '#EAF0FF',
+  gitter: '#2B2E35',
+  hell: '#F6F7F9',
 } as const;
 
 /** Umriss des Bauern: Kopf, Kragen, Körper, Sockel. */
