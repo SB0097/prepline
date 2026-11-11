@@ -156,6 +156,28 @@ export async function repertoireUebersicht(
   return ergebnis;
 }
 
+export type RepertoireDetail = Repertoire & {
+  endFen: string;
+  fortschritt: Fortschritt;
+};
+
+/** Ein Repertoire mit Zugbaum und Fortschritt für die Detailseite. */
+export async function repertoireDetail(
+  sql: Sql,
+  id: number,
+  jetzt = Date.now(),
+): Promise<RepertoireDetail | null> {
+  const rep = await repertoireLaden(sql, id);
+  if (!rep) return null;
+  const karten = kartenAusBaum(rep.baum, rep.seite);
+  const staende = await lernstaendeLaden(sql, id);
+  return {
+    ...rep,
+    endFen: hauptlinieEnde(rep.baum),
+    fortschritt: fortschritt(karten, staende, jetzt),
+  };
+}
+
 // --- PGN-Import ---
 
 export type ImportErgebnis = {

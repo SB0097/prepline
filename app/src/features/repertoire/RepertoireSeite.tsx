@@ -71,7 +71,12 @@ function Kachel({
   const status = faellig > 0 ? `${faellig} fällig` : neu > 0 ? `${neu} neu` : 'alles gut';
   const brett = breite - 24;
   return (
-    <View style={[stile.kachel, { width: breite }]} accessibilityLabel={`${rep.name}, ${status}`}>
+    <Pressable
+      onPress={() => router.push({ pathname: '/eroeffnung/[id]', params: { id: String(rep.id) } })}
+      accessibilityRole="button"
+      accessibilityLabel={`${rep.name}, ${status}`}
+      style={({ pressed }) => [stile.kachel, { width: breite }, pressed && { opacity: 0.85 }]}
+    >
       <View style={stile.brett}>
         <Schachbrett
           fen={rep.endFen}
@@ -86,7 +91,7 @@ function Kachel({
         {rep.name}
       </Text>
       <Text style={[stile.status, faellig + neu > 0 && stile.statusAktiv]}>{status}</Text>
-    </View>
+    </Pressable>
   );
 }
 

@@ -34,16 +34,21 @@ export type Trainingsteil = {
 
 export type Trainingsvorbereitung = { teile: Trainingsteil[]; einstellungen: Einstellungen };
 
-/** Alle Repertoires, in denen heute etwas dran ist, mit ihrem Tagesplan. */
+/**
+ * Alle Repertoires, in denen heute etwas dran ist, mit ihrem Tagesplan.
+ * Mit `nurId` nur dieses eine Repertoire (Knopf „Nur diese trainieren“).
+ */
 export async function trainingVorbereiten(
   sql: Sql,
   jetzt = Date.now(),
+  nurId?: number,
 ): Promise<Trainingsvorbereitung> {
   const einstellungen = await einstellungenLaden(sql);
   const heute = await tageszaehler(sql, tagSchluessel(jetzt));
   let schonEingefuehrt = heute.neu;
   const teile: Trainingsteil[] = [];
-  for (const kopf of await repertoireListe(sql)) {
+  const liste = (await repertoireListe(sql)).filter((r) => nurId === undefined || r.id === nurId);
+  for (const kopf of liste) {
     const rep = await repertoireLaden(sql, kopf.id);
     if (!rep) continue;
     const karten = kartenAusBaum(rep.baum, rep.seite);

@@ -30,6 +30,7 @@ import {
   passendeRepertoires,
   pgnImportieren,
   repertoireAnlegen,
+  repertoireDetail,
   repertoireErgaenzen,
   repertoireLaden,
   repertoireListe,
@@ -262,5 +263,16 @@ describe('Einstellungen der App', () => {
       neuProTag: 30,
     });
     expect(neuProTagBegrenzen(1)).toBe(5);
+  });
+});
+
+describe('Detailseite', () => {
+  it('liefert Zugbaum, Endstellung und Fortschritt eines Repertoires', async () => {
+    const sql = await testDatenbank();
+    const { ids } = await pgnImportieren(sql, EVANS, { name: 'Italienisch', seite: 'weiss' });
+    const detail = await repertoireDetail(sql, ids[0]!, JETZT);
+    expect(detail).toMatchObject({ name: 'Italienisch', fortschritt: { stellungen: 6 } });
+    expect(detail!.baum.zuege[0]!.san).toBe('e4');
+    expect(await repertoireDetail(sql, 999, JETZT)).toBeNull();
   });
 });

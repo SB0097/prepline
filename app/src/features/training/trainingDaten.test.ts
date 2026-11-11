@@ -59,3 +59,13 @@ describe('Ergebnisse speichern', () => {
     });
   });
 });
+
+describe('Nur ein Repertoire trainieren', () => {
+  it('nimmt mit nurId nur dieses Repertoire', async () => {
+    const sql = await testDatenbank();
+    const { ids } = await pgnImportieren(sql, EVANS, { name: 'Italienisch', seite: 'weiss' });
+    await pgnImportieren(sql, CARO, { name: 'Caro-Kann', seite: 'schwarz' });
+    const { teile } = await trainingVorbereiten(sql, JETZT, ids[0]!);
+    expect(teile.map((t) => t.rep.name)).toEqual(['Italienisch']);
+  });
+});
