@@ -2,3 +2,4 @@
 export * from './seite.ts';
 export * from './pgn/index.ts';
 export * from './lernen/index.ts';
+export * from './brett/index.ts';
