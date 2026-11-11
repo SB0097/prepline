@@ -39,7 +39,8 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 160
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": false,
