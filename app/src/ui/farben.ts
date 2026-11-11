@@ -4,6 +4,7 @@ import { LOGO_FARBEN } from './logo/logoDaten';
 export const FARBEN = {
   hintergrund: LOGO_FARBEN.hintergrund,
   karte: '#151D36',
+  leiste: '#111936',
   linie: '#222C4A',
   text: LOGO_FARBEN.hell,
   textLeise: '#8E9BC0',
