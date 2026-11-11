@@ -37,6 +37,8 @@ type Props = {
   pfeil?: string;
   /** Darf gezogen werden? */
   bedienbar?: boolean;
+  /** Koordinaten a–h und 1–8 in den Ecken (aus bei Mini-Brettern). */
+  koordinaten?: boolean;
   onZug?: (zug: Brettzug) => void;
 };
 
@@ -52,6 +54,7 @@ export function Schachbrett({
   markierungen = [],
   pfeil,
   bedienbar = true,
+  koordinaten = true,
   onZug,
 }: Props) {
   const f = groesse / 8;
@@ -172,8 +175,12 @@ export function Schachbrett({
             { backgroundColor: hell ? FARBEN.brettHell : FARBEN.brettDunkel },
           ]}
         >
-          {index % 8 === 0 && <Text style={[styles.reihe, koordinate(f, hell)]}>{feld[1]}</Text>}
-          {index >= 56 && <Text style={[styles.linie, koordinate(f, hell)]}>{feld[0]}</Text>}
+          {koordinaten && index % 8 === 0 && (
+            <Text style={[styles.reihe, koordinate(f, hell)]}>{feld[1]}</Text>
+          )}
+          {koordinaten && index >= 56 && (
+            <Text style={[styles.linie, koordinate(f, hell)]}>{feld[0]}</Text>
+          )}
         </View>
       ))}
       {hervorgehoben.map((feld, i) => (

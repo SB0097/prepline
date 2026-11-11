@@ -7,3 +7,4 @@ export {
   stellungOhneZaehler,
   zusammenfuehren,
 } from './zusammenfuehren.ts';
+export { sanAufDeutsch } from './notation.ts';

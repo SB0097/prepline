@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import {
   bewerten,
   gezeigt,
+  GRUNDSTELLUNG,
   kartenAusBaum,
   neuerLernstand,
   pgnLesen,
@@ -13,6 +14,12 @@ import {
 
 import { nodeSql, testDatenbank } from '@/test/nodeSql';
 
+import {
+  einstellungAendern,
+  einstellungenLaden,
+  EINSTELLUNGEN_STANDARD,
+  neuProTagBegrenzen,
+} from './einstellungen';
 import { migrieren, SCHEMA_VERSION } from './schema';
 import {
   einstellungLesen,
@@ -20,12 +27,14 @@ import {
   lernstaendeLaden,
   lernstaendeLoeschen,
   lernstandSpeichern,
+  passendeRepertoires,
   pgnImportieren,
   repertoireAnlegen,
   repertoireErgaenzen,
   repertoireLaden,
   repertoireListe,
   repertoireLoeschen,
+  repertoireUebersicht,
   repertoireUmbenennen,
   tagSchluessel,
   tageszaehler,
@@ -195,5 +204,63 @@ describe('Daten bleiben erhalten', () => {
     expect((await repertoireListe(zweite)).map((r) => r.name)).toEqual(['Bleibt']);
     expect((await lernstaendeLaden(zweite, ids[0]!)).size).toBe(1);
     zweite.schliessen();
+  });
+});
+
+describe('Import an bestehendes Repertoire und Übersicht', () => {
+  it('findet passende Repertoires nach Seite und Startstellung', async () => {
+    const sql = await testDatenbank();
+    const { ids } = await pgnImportieren(sql, EVANS, { name: 'Italienisch', seite: 'weiss' });
+    await pgnImportieren(sql, EVANS, { name: 'Gegen Italienisch', seite: 'schwarz' });
+    const passend = await passendeRepertoires(sql, 'weiss', GRUNDSTELLUNG);
+    expect(passend.map((r) => r.id)).toEqual(ids);
+  });
+
+  it('hängt einen Import an und zählt nur die neuen Stellungen', async () => {
+    const sql = await testDatenbank();
+    const erst = await pgnImportieren(sql, EVANS, { name: 'Italienisch', seite: 'weiss' });
+    expect(erst.neueStellungen).toBe(6);
+    const dazu = await pgnImportieren(sql, '1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 *', {
+      name: 'egal',
+      seite: 'weiss',
+      ziel: erst.ids[0]!,
+    });
+    // Lb5 ist nur eine zweite Antwort in einer bekannten Stellung; neu ist die Stellung nach 3...a6.
+    expect(dazu).toEqual({ ids: erst.ids, fehler: [], neueStellungen: 1 });
+    expect(await repertoireListe(sql)).toHaveLength(1);
+  });
+
+  it('zeigt Fortschritt und Endstellung jedes Repertoires', async () => {
+    const sql = await testDatenbank();
+    const { ids } = await pgnImportieren(sql, EVANS, { name: 'Italienisch', seite: 'weiss' });
+    const [rep] = await repertoireUebersicht(sql, JETZT);
+    expect(rep).toMatchObject({
+      id: ids[0],
+      name: 'Italienisch',
+      fortschritt: { stellungen: 6, faellig: 0, neu: 6, sicher: 0 },
+    });
+    expect(rep!.endFen).toMatch(/^r1bqk1nr\/pppp1ppp\/2n5\/4p3\/1bB1P3\/2P2N2/);
+  });
+});
+
+describe('Einstellungen der App', () => {
+  it('liefert Standardwerte und speichert Änderungen', async () => {
+    const sql = await testDatenbank();
+    expect(await einstellungenLaden(sql)).toEqual(EINSTELLUNGEN_STANDARD);
+    expect(EINSTELLUNGEN_STANDARD).toMatchObject({ ton: false, vibration: false });
+    await einstellungAendern(sql, 'figurensatz', 'modern');
+    await einstellungAendern(sql, 'ton', true);
+    expect(await einstellungenLaden(sql)).toMatchObject({ figurensatz: 'modern', ton: true });
+  });
+
+  it('ignoriert kaputte Werte und begrenzt neue Züge pro Tag', async () => {
+    const sql = await testDatenbank();
+    await einstellungSchreiben(sql, 'figurensatz', 'gibtsnicht');
+    await einstellungSchreiben(sql, 'neuProTag', 99);
+    expect(await einstellungenLaden(sql)).toMatchObject({
+      figurensatz: 'klassisch',
+      neuProTag: 30,
+    });
+    expect(neuProTagBegrenzen(1)).toBe(5);
   });
 });

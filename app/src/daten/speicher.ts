@@ -1,10 +1,15 @@
 // Lesen und Schreiben der App-Daten: Repertoires, Lernstände, Tageszähler, Einstellungen.
 import {
   type Baum,
+  type Fortschritt,
+  fortschritt,
+  hauptlinieEnde,
+  kartenAusBaum,
   type Lernstand,
   type PgnFehler,
   pgnLesen,
   type Seite,
+  stellungOhneZaehler,
   type Zugknoten,
   zusammenfuehren,
 } from '@prepline/shared';
@@ -102,31 +107,98 @@ export async function repertoireErgaenzen(sql: Sql, id: number, neu: Baum): Prom
   return true;
 }
 
+/** Repertoires gleicher Seite und Startstellung – an diese kann ein Import angehängt werden. */
+export async function passendeRepertoires(
+  sql: Sql,
+  seite: Seite,
+  startFen: string,
+): Promise<RepertoireKopf[]> {
+  const zeilen = await sql.alle<RepertoireZeile>(
+    'SELECT * FROM repertoire WHERE seite = ? ORDER BY name COLLATE NOCASE',
+    [seite],
+  );
+  const ziel = stellungOhneZaehler(startFen);
+  return zeilen
+    .filter((z) => stellungOhneZaehler(z.start_fen) === ziel)
+    .map((z) => ({
+      id: z.id,
+      name: z.name,
+      seite: z.seite,
+      offiziell: z.offiziell === 1,
+      erstellt: z.erstellt,
+    }));
+}
+
+export type RepertoireUebersicht = RepertoireKopf & {
+  /** Stellung am Ende der Hauptlinie (Mini-Brett). */
+  endFen: string;
+  fortschritt: Fortschritt;
+};
+
+/** Alle Repertoires mit Fortschritt, sortiert nach Seite und Name. */
+export async function repertoireUebersicht(
+  sql: Sql,
+  jetzt = Date.now(),
+): Promise<RepertoireUebersicht[]> {
+  const liste = await repertoireListe(sql);
+  const ergebnis: RepertoireUebersicht[] = [];
+  for (const kopf of liste) {
+    const rep = await repertoireLaden(sql, kopf.id);
+    if (!rep) continue;
+    const karten = kartenAusBaum(rep.baum, rep.seite);
+    const staende = await lernstaendeLaden(sql, kopf.id);
+    ergebnis.push({
+      ...kopf,
+      endFen: hauptlinieEnde(rep.baum),
+      fortschritt: fortschritt(karten, staende, jetzt),
+    });
+  }
+  return ergebnis;
+}
+
 // --- PGN-Import ---
 
 export type ImportErgebnis = {
-  /** Angelegte Repertoires (eins pro Startstellung, meist genau eins). */
+  /** Angelegte oder ergänzte Repertoires (eins pro Startstellung, meist genau eins). */
   ids: number[];
   fehler: PgnFehler[];
+  /** Wie viele Stellungen zum Lernen dazugekommen sind. */
+  neueStellungen: number;
 };
 
-/** Liest PGN-Text und legt daraus ein Repertoire an (bei mehreren Startstellungen mehrere). */
+/**
+ * Liest PGN-Text und legt daraus ein Repertoire an (bei mehreren Startstellungen mehrere).
+ * Mit `ziel` werden die Züge an ein bestehendes Repertoire angehängt, wenn die Startstellung passt.
+ */
 export async function pgnImportieren(
   sql: Sql,
   text: string,
-  daten: { name: string; seite: Seite },
+  daten: { name: string; seite: Seite; ziel?: number },
   jetzt = Date.now(),
 ): Promise<ImportErgebnis> {
   const { partien, fehler } = pgnLesen(text);
   const baeume = zusammenfuehren(partien);
   const ids: number[] = [];
+  let neueStellungen = 0;
   await sql.transaktion(async () => {
+    const [einziger] = baeume;
+    if (daten.ziel !== undefined && baeume.length === 1 && einziger) {
+      const alt = await repertoireLaden(sql, daten.ziel);
+      if (alt && (await repertoireErgaenzen(sql, daten.ziel, einziger))) {
+        const neu = (await repertoireLaden(sql, daten.ziel))!;
+        neueStellungen =
+          kartenAusBaum(neu.baum, neu.seite).length - kartenAusBaum(alt.baum, alt.seite).length;
+        ids.push(daten.ziel);
+        return;
+      }
+    }
     for (const [i, baum] of baeume.entries()) {
       const name = baeume.length > 1 ? `${daten.name} (${i + 1})` : daten.name;
       ids.push(await repertoireAnlegen(sql, { name, seite: daten.seite, baum }, jetzt));
+      neueStellungen += kartenAusBaum(baum, daten.seite).length;
     }
   });
-  return { ids, fehler };
+  return { ids, fehler, neueStellungen };
 }
 
 // --- Lernstände ---
