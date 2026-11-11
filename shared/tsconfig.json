@@ -7,7 +7,7 @@
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
-    "types": ["jest"]
+    "types": ["jest", "node"]
   },
   "include": ["src"]
 }
