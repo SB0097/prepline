@@ -1,4 +1,5 @@
 import { NEU_PRO_TAG_BEREICH } from '@prepline/shared';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
@@ -10,14 +11,24 @@ import {
   einstellungenLaden,
   neuProTagBegrenzen,
 } from '@/daten/einstellungen';
+import { einstellungLesen } from '@/daten/speicher';
+import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
+import { APP_VERSION, Zeile } from '@/features/info/UeberSeite';
 import { Abschnitt, RUNDUNG, SeitenTitel } from '@/ui/bausteine';
 import { FIGURENSAETZE, type Figurensatz } from '@/ui/brett/figuren';
 import { FIGUREN_SVG } from '@/ui/brett/figurenSvg';
 import { FARBEN } from '@/ui/farben';
 
-// Mehr-Seite (Skizze M2, 11.11.2026): Figuren als Vorschau-Kacheln, darunter die Trainings-Einstellungen.
-// Sicherung, „Über Prepline“ und Datenschutz kommen mit M8 dazu.
+// Mehr-Seite (Skizze M2, 11.11.2026): Figuren als Vorschau-Kacheln, darunter die Trainings-Einstellungen,
+// dann Daten (Sicherung) und Info (Über Prepline, Datenschutz) aus Skizze M8.
+const letzteSicherungLaden = (sql: Sql) =>
+  einstellungLesen<number | null>(sql, 'letzteSicherung', null);
+
+function zuletzt(zeit: number | null | undefined): string {
+  if (!zeit) return 'zuletzt: nie';
+  return `zuletzt: ${new Date(zeit).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}`;
+}
 const NAMEN: Record<Figurensatz, string> = {
   klassisch: 'Klassisch',
   modern: 'Modern',
@@ -27,6 +38,7 @@ const NAMEN: Record<Figurensatz, string> = {
 export function MehrSeite() {
   const db = useDatenbank();
   const geladen = useGeladen(einstellungenLaden);
+  const letzteSicherung = useGeladen(letzteSicherungLaden);
   const [geaendert, setGeaendert] = useState<Einstellungen | null>(null);
   const e = geaendert ?? geladen;
 
@@ -85,6 +97,25 @@ export function MehrSeite() {
           wert={e.vibration}
           onWert={(w) => aendern('vibration', w)}
         />
+      </View>
+      <Abschnitt titel="Daten" />
+      <View style={stile.gruppe}>
+        <Zeile
+          titel="Sicherung"
+          rechts={zuletzt(letzteSicherung)}
+          erste
+          onPress={() => router.push('/sicherung')}
+        />
+      </View>
+      <Abschnitt titel="Info" />
+      <View style={stile.gruppe}>
+        <Zeile
+          titel="Über Prepline"
+          rechts={`Version ${APP_VERSION}`}
+          erste
+          onPress={() => router.push('/ueber')}
+        />
+        <Zeile titel="Datenschutz" onPress={() => router.push('/datenschutz')} />
       </View>
     </ScrollView>
   );

@@ -15,3 +15,4 @@ export {
   type Zuglinie,
   zugfolgeText,
 } from './linien.ts';
+export { type PgnKopf, pgnSchreiben } from './schreiben.ts';

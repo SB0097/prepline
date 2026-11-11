@@ -21,7 +21,7 @@ export function Knopf({
 }: {
   titel: string;
   onPress: () => void;
-  art?: 'voll' | 'leise';
+  art?: 'voll' | 'leise' | 'rahmen';
   aus?: boolean;
 }) {
   return (
@@ -31,11 +31,21 @@ export function Knopf({
       accessibilityRole="button"
       accessibilityState={{ disabled: aus }}
       style={({ pressed }) => [
-        art === 'voll' ? stile.knopfVoll : stile.knopfLeise,
+        art === 'voll' ? stile.knopfVoll : art === 'rahmen' ? stile.knopfRahmen : stile.knopfLeise,
         (pressed || aus) && { opacity: aus ? 0.4 : 0.8 },
       ]}
     >
-      <Text style={art === 'voll' ? stile.knopfTextVoll : stile.knopfTextLeise}>{titel}</Text>
+      <Text
+        style={
+          art === 'voll'
+            ? stile.knopfTextVoll
+            : art === 'rahmen'
+              ? stile.knopfTextRahmen
+              : stile.knopfTextLeise
+        }
+      >
+        {titel}
+      </Text>
     </Pressable>
   );
 }
@@ -116,6 +126,14 @@ const stile = StyleSheet.create({
     alignItems: 'center',
   },
   knopfLeise: { paddingVertical: 14, alignItems: 'center' },
+  knopfRahmen: {
+    borderWidth: 2,
+    borderColor: FARBEN.linie,
+    borderRadius: RUNDUNG,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  knopfTextRahmen: { color: FARBEN.text, fontSize: 16 },
   knopfTextVoll: { color: FARBEN.textAufAkzent, fontSize: 18, fontWeight: '700' },
   knopfTextLeise: { color: FARBEN.akzent, fontSize: 16 },
   umschalter: {
