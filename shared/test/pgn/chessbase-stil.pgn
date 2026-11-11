@@ -1,0 +1,8 @@
+﻿[Event "Training"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+
+1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5 4.b4!? Bxb4 5.c3 Ba5 6.d4 exd4 7.0-0 dxc3 $6 (7...Nge7
+8.cxd4 d5 9.exd5 Nxd5 10.Ba3 $14) 8.Qb3 Qf6 9.e5 Qg6 10.Nxc3 Nge7 11.Ba3 0-0 ; Rochade ins Ungewisse
+12.Rad1 $1 1-0
