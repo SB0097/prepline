@@ -8,3 +8,10 @@ export {
   zusammenfuehren,
 } from './zusammenfuehren.ts';
 export { sanAufDeutsch } from './notation.ts';
+export {
+  linienAusBaum,
+  linienKurztext,
+  stellungVor,
+  type Zuglinie,
+  zugfolgeText,
+} from './linien.ts';

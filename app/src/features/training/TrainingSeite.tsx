@@ -13,6 +13,7 @@ import {
   type Schritt,
   tippNehmen,
 } from '@prepline/shared';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   Pressable,
@@ -76,6 +77,8 @@ function uebernehmen(ablauf: Ablauf, runde: Runde, teile: readonly Trainingsteil
 
 export function TrainingSeite() {
   const db = useDatenbank();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const nurId = id ? Number(id) : undefined;
   const breite = useWindowDimensions().width;
   const [vorbereitung, setVorbereitung] = useState<Trainingsvorbereitung | null>(null);
   const [ablauf, setAblauf] = useState<Ablauf>({ teilIndex: 0, runde: null, erledigtVorher: 0 });
@@ -88,7 +91,7 @@ export function TrainingSeite() {
   useEffect(() => {
     if (db.status !== 'bereit') return;
     let aktiv = true;
-    void trainingVorbereiten(db.sql).then((v) => {
+    void trainingVorbereiten(db.sql, Date.now(), nurId).then((v) => {
       if (!aktiv) return;
       setVorbereitung(v);
       const erster = v.teile[0];
@@ -97,7 +100,7 @@ export function TrainingSeite() {
     return () => {
       aktiv = false;
     };
-  }, [db]);
+  }, [db, nurId]);
 
   const teile = vorbereitung?.teile ?? KEINE_TEILE;
   const { runde, teilIndex, erledigtVorher } = ablauf;
