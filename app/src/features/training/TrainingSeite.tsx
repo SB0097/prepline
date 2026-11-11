@@ -11,6 +11,7 @@ import {
   rundeStarten,
   sanAufDeutsch,
   type Schritt,
+  erklaerungFuer,
   tippNehmen,
 } from '@prepline/shared';
 import { useLocalSearchParams } from 'expo-router';
@@ -29,8 +30,11 @@ import Svg, { Path } from 'react-native-svg';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
 import { Knopf, RUNDUNG, zurueck } from '@/ui/bausteine';
+import { CoachBauer } from '@/ui/CoachBauer';
 import { type Feldmarkierung, Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
+
+import { WarumBlase } from './WarumBlase';
 
 import {
   ereignisSpeichern,
@@ -86,6 +90,7 @@ export function TrainingSeite() {
   const [anzeige, setAnzeige] = useState<Anzeige | null>(null);
   const [tippFeld, setTippFeld] = useState<Feld | null>(null);
   const [zuegeOffen, setZuegeOffen] = useState(false);
+  const [warumOffen, setWarumOffen] = useState(false);
 
   // Tagesplan laden und die erste Runde starten.
   useEffect(() => {
@@ -109,13 +114,13 @@ export function TrainingSeite() {
 
   // Gegnerzug automatisch spielen.
   useEffect(() => {
-    if (!runde || schritt?.art !== 'gegner' || anzeige) return;
+    if (!runde || schritt?.art !== 'gegner' || anzeige || warumOffen) return;
     const zeit = setTimeout(
       () => setAblauf((a) => uebernehmen(a, gegnerZiehen(runde), teile)),
       GEGNER_PAUSE,
     );
     return () => clearTimeout(zeit);
-  }, [runde, schritt, anzeige, teile]);
+  }, [runde, schritt, anzeige, teile, warumOffen]);
 
   const gesamt = teile.reduce((n, t) => n + t.plan.faellig.length + t.plan.neu.length, 0);
   const erledigt = erledigtVorher + (runde ? rundenFortschritt(runde).erledigt : 0);
@@ -168,6 +173,24 @@ export function TrainingSeite() {
   ];
   const kommentar = anzeige?.art === 'richtig' ? schritt.kommentar : vorher?.kommentar;
   const eigenerSchritt = schritt.art !== 'gegner';
+
+  // „Warum?“ nur, wenn der Zug schon zu sehen ist: neuer Zug, Nachspielen, gerade richtig gespielt
+  // oder der zuletzt gespielte eigene Zug. So verrät die Erklärung nie die Antwort.
+  const warumKandidaten: Schritt[] = [];
+  if (
+    eigenerSchritt &&
+    (schritt.art === 'neu' || runde.nachspielen || anzeige?.art === 'richtig')
+  ) {
+    warumKandidaten.push(schritt);
+  }
+  const letzterEigener = runde.linie
+    .slice(0, runde.index)
+    .reverse()
+    .find((s) => s.art !== 'gegner');
+  if (letzterEigener) warumKandidaten.push(letzterEigener);
+  const warum = warumKandidaten
+    .map((s) => ({ schritt: s, text: erklaerungFuer(teil.rep.quelle, s.fen, s.san)?.de }))
+    .find((w) => w.text);
 
   return (
     <SafeAreaView style={stile.seite}>
@@ -223,7 +246,7 @@ export function TrainingSeite() {
       </ScrollView>
 
       <View style={stile.unten}>
-        {eigenerSchritt && schritt.art !== 'neu' && !runde.nachspielen && (
+        {eigenerSchritt && schritt.art !== 'neu' && !runde.nachspielen ? (
           <Pressable
             onPress={tipp}
             disabled={runde.tipp || anzeige?.art === 'richtig'}
@@ -232,8 +255,29 @@ export function TrainingSeite() {
           >
             <Text style={stile.tippText}>Tipp</Text>
           </Pressable>
+        ) : (
+          <View />
+        )}
+        {warum && (
+          <Pressable
+            onPress={() => setWarumOffen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`Warum ${zugText(warum.schritt)}?`}
+            style={stile.warum}
+          >
+            <CoachBauer groesse={26} />
+            <Text style={stile.warumText}>Warum?</Text>
+          </Pressable>
         )}
       </View>
+      {warum?.text && (
+        <WarumBlase
+          sichtbar={warumOffen}
+          titel={`Warum ${zugText(warum.schritt)}?`}
+          text={warum.text}
+          onSchliessen={() => setWarumOffen(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -452,7 +496,26 @@ const stile = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  unten: { flexDirection: 'row', paddingHorizontal: 20, minHeight: 44 },
+  unten: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    minHeight: 48,
+  },
+  warum: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: FARBEN.karte,
+    borderColor: FARBEN.linie,
+    borderWidth: 1,
+    borderRadius: RUNDUNG,
+    paddingLeft: 12,
+    paddingRight: 18,
+    paddingVertical: 8,
+  },
+  warumText: { color: FARBEN.text, fontSize: 15, fontWeight: '700' },
   tipp: {
     borderWidth: 2,
     borderColor: FARBEN.linie,

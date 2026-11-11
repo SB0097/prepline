@@ -49,6 +49,10 @@ const MIGRATIONEN: string[] = [
     wert TEXT NOT NULL
   );
   `,
+  // 2: Herkunft aus der Sammlung (M7), z. B. 'italienisch-evans'; NULL bei eigenen Importen
+  `
+  ALTER TABLE repertoire ADD COLUMN quelle TEXT;
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONEN.length;

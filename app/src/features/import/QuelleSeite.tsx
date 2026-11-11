@@ -7,11 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
+import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
 
 import { entwurfSetzen } from './entwurf';
 
-// Import Schritt 1 (Skizze 11.11.2026): PGN-Datei wählen oder Text einfügen.
+// Import Schritt 1 (Skizze 11.11.2026): aus der Sammlung, PGN-Datei oder Text einfügen.
 export function QuelleSeite() {
   const [fehler, setFehler] = useState<string | null>(null);
 
@@ -34,6 +35,13 @@ export function QuelleSeite() {
     <SafeAreaView style={stile.seite}>
       <ZurueckKopf titel="Eröffnung hinzufügen" />
       <View style={stile.inhalt}>
+        <Wahl
+          symbol={<CoachBauer groesse={30} />}
+          titel="Aus der Sammlung"
+          text="fertige Eröffnungen mit Erklärungen"
+          hervorgehoben
+          onPress={() => router.push('/sammlung')}
+        />
         <Wahl
           symbol={<DateiSymbol />}
           titel="PGN-Datei wählen"
@@ -60,18 +68,24 @@ function Wahl({
   symbol,
   titel,
   text,
+  hervorgehoben = false,
   onPress,
 }: {
   symbol: ReactNode;
   titel: string;
   text: string;
+  hervorgehoben?: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      style={({ pressed }) => [stile.wahl, pressed && { opacity: 0.8 }]}
+      style={({ pressed }) => [
+        stile.wahl,
+        hervorgehoben && stile.hervorgehoben,
+        pressed && { opacity: 0.8 },
+      ]}
     >
       <View style={stile.symbol}>{symbol}</View>
       <View style={stile.wahlText}>
@@ -111,6 +125,7 @@ const stile = StyleSheet.create({
     borderRadius: RUNDUNG,
     padding: 20,
   },
+  hervorgehoben: { borderWidth: 2, borderColor: FARBEN.akzent },
   symbol: {
     width: 44,
     height: 44,

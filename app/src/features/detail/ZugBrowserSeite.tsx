@@ -1,4 +1,10 @@
-import { amZug, linienAusBaum, type Zugknoten, zugfolgeText } from '@prepline/shared';
+import {
+  amZug,
+  erklaerungFuer,
+  linienAusBaum,
+  type Zugknoten,
+  zugfolgeText,
+} from '@prepline/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -10,6 +16,7 @@ import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
 import { Knopf, zurueck } from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
+import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
 
 // Zug-Browser (Skizze D2, Serkan 11.11.2026): eine Linie Zug für Zug ansehen.
@@ -42,6 +49,9 @@ export function ZugBrowserSeite() {
   const naechster = (aufLinie && ziel?.knoten[pfad.length]) || kinder[0];
 
   const zugText = (k: Zugknoten) => zugfolgeText(fen, [k]);
+  // Erklärung des Coach-Bauern zum zuletzt gezeigten Zug (nur bei Eröffnungen aus der Sammlung)
+  const fenVorLetztem = pfad.length > 1 ? pfad[pfad.length - 2]!.fen : rep.baum.startFen;
+  const erklaerung = letzter && erklaerungFuer(rep.quelle, fenVorLetztem, letzter.san);
 
   return (
     <SafeAreaView style={stile.seite}>
@@ -74,6 +84,15 @@ export function ZugBrowserSeite() {
         <Text style={stile.zugfolge}>
           {pfad.length ? zugfolgeText(rep.baum.startFen, pfad) : 'Ausgangsstellung'}
         </Text>
+        {erklaerung && letzter ? (
+          <View style={stile.coach}>
+            <CoachBauer groesse={36} />
+            <View style={stile.coachText}>
+              <Text style={stile.coachTitel}>Warum {zugfolgeText(fenVorLetztem, [letzter])}?</Text>
+              <Text style={stile.coachErklaerung}>{erklaerung.de}</Text>
+            </View>
+          </View>
+        ) : null}
         {letzter?.kommentar ? <Text style={stile.kommentar}>{letzter.kommentar}</Text> : null}
 
         {kinder.length > 0 ? (
@@ -158,6 +177,20 @@ const stile = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  coach: {
+    flexDirection: 'row',
+    gap: 12,
+    marginHorizontal: 20,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: FARBEN.karte,
+    borderColor: 'rgba(108, 140, 255, 0.4)',
+    borderWidth: 1,
+  },
+  coachText: { flex: 1, gap: 4 },
+  coachTitel: { color: FARBEN.akzent, fontSize: 14, fontWeight: '700' },
+  coachErklaerung: { color: FARBEN.text, fontSize: 14, lineHeight: 20 },
   abschnitt: {
     color: FARBEN.textLeise,
     fontSize: 13,
