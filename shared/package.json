@@ -1,0 +1,23 @@
+{
+  "name": "@prepline/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.19.2",
+    "jest": "~30.5.2",
+    "ts-jest": "^29.4.15"
+  },
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "ts-fsrs": "^6.0.0"
+  }
+}
