@@ -11,6 +11,11 @@ export type Tagesplan = {
   faellig: string[];
   /** Neue Karten für heute, in Baum-Reihenfolge (Hauptlinie zuerst). */
   neu: string[];
+  /**
+   * Neue Karten, die schon einmal gezeigt, aber noch nicht gelernt wurden (z. B. Runde abgebrochen).
+   * Sie werden abgefragt statt noch einmal gezeigt und zählen nicht gegen das Tageslimit.
+   */
+  angefangen: string[];
 };
 
 export function tagesplan(
@@ -30,13 +35,16 @@ export function tagesplan(
     .sort((a, b) => staende.get(a.schluessel)!.faellig - staende.get(b.schluessel)!.faellig)
     .map((k) => k.schluessel);
 
-  // Schon gezeigte, aber noch nicht abgefragte neue Karten zählen zuerst (wurden heute eingeführt).
   const neueKarten = karten.filter((k) => istNeu(staende.get(k.schluessel)));
-  const angefangen = neueKarten.filter((k) => staende.get(k.schluessel)?.gezeigt);
-  const unberuehrt = neueKarten.filter((k) => !staende.get(k.schluessel)?.gezeigt);
-  const neu = [...angefangen, ...unberuehrt.slice(0, nochFrei)].map((k) => k.schluessel);
+  const angefangen = neueKarten
+    .filter((k) => staende.get(k.schluessel)?.gezeigt)
+    .map((k) => k.schluessel);
+  const neu = neueKarten
+    .filter((k) => !staende.get(k.schluessel)?.gezeigt)
+    .slice(0, nochFrei)
+    .map((k) => k.schluessel);
 
-  return { faellig, neu };
+  return { faellig, neu, angefangen };
 }
 
 /** Nächster Zeitpunkt, an dem wieder etwas fällig wird (für „Nächste Wiederholung um …“). */

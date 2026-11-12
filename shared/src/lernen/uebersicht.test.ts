@@ -25,8 +25,12 @@ describe('Übersicht', () => {
       stellungen: 6,
       faellig: 0,
       neu: 5,
+      angefangen: 0,
       sicher: 0,
     });
+    // Gezeigt, aber noch nicht gelernt: zählt weiter als neu und zusätzlich als angefangen.
+    const nurGezeigt = new Map([[karten[1]!.schluessel, gezeigt(neuerLernstand(JETZT), JETZT)]]);
+    expect(fortschritt(karten, nurGezeigt, JETZT)).toMatchObject({ neu: 6, angefangen: 1 });
     expect(fortschritt(karten, staende, JETZT + 365 * 86_400_000).faellig).toBe(1);
   });
 

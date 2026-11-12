@@ -30,6 +30,8 @@ export type Trainingsteil = {
   /** Lernstände dieses Repertoires; wird beim Speichern mitgeführt. */
   staende: Map<string, Lernstand>;
   plan: Tagesplan;
+  /** Einstellung „Neue Züge auf einmal“. */
+  haeppchen: number;
 };
 
 export type Trainingsvorbereitung = { teile: Trainingsteil[]; einstellungen: Einstellungen };
@@ -58,8 +60,10 @@ export async function trainingVorbereiten(
       heuteSchonEingefuehrt: schonEingefuehrt,
     });
     // Das Tageslimit für neue Züge gilt über alle Repertoires zusammen.
-    schonEingefuehrt += plan.neu.filter((k) => !staende.get(k)?.gezeigt).length;
-    if (plan.faellig.length + plan.neu.length > 0) teile.push({ rep, karten, staende, plan });
+    schonEingefuehrt += plan.neu.length;
+    if (plan.faellig.length + plan.neu.length + plan.angefangen.length > 0) {
+      teile.push({ rep, karten, staende, plan, haeppchen: einstellungen.haeppchen });
+    }
   }
   return { teile, einstellungen };
 }
