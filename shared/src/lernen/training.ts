@@ -213,6 +213,25 @@ export function eigenerZug(
   };
 }
 
+/** Wo man beim Lernen neuer Züge gerade steht, z. B. „neu, 2 von 3“ oder „abrufen, 1 von 3“. */
+export type Lernphase = { art: 'neu' | 'abrufen'; nummer: number; anzahl: number };
+
+function phaseVon(schritt: Schritt | undefined | null): Lernphase['art'] | null {
+  if (schritt?.art === 'neu') return 'neu';
+  return schritt?.art === 'abfrage' && schritt.frisch ? 'abrufen' : null;
+}
+
+/**
+ * Lernphase des aktuellen Schritts mit Zählung innerhalb des laufenden Durchgangs.
+ * Null bei Gegnerzügen, fälligen Wiederholungen und Zügen, die nur mitgespielt werden.
+ */
+export function lernphase(runde: Runde): Lernphase | null {
+  const art = phaseVon(aktuellerSchritt(runde));
+  if (!art) return null;
+  const gleiche = runde.linie.flatMap((s, i) => (phaseVon(s) === art ? [i] : []));
+  return { art, nummer: gleiche.indexOf(runde.index) + 1, anzahl: gleiche.length };
+}
+
 /**
  * Fortschritt der Runde: fertige Karten für die Anzeige „3 / 24“ und ein feinerer Anteil
  * (0 bis 1) für den Balken, in dem auch Zeigen und jede richtige Abfrage zählen.
@@ -265,6 +284,8 @@ function naechsteLinie(runde: Runde): Runde {
         maxNeu: r.haeppchen,
       },
       r.zufall,
+    ).map((s) =>
+      s.art === 'abfrage' && s.karte && r.lernen.has(s.karte) ? { ...s, frisch: true } : s,
     );
   let linie = bauen(runde);
   let aktuell = runde;

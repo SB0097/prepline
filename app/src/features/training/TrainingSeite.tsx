@@ -5,6 +5,7 @@ import {
   type Feld,
   felderAusUci,
   gegnerZiehen,
+  lernphase,
   type Runde,
   rundeFertig,
   rundenFortschritt,
@@ -69,7 +70,9 @@ const MARKIERUNG = {
 type Ablauf = { teilIndex: number; runde: Runde | null; erledigtVorher: number };
 
 function teilStarten(teil: Trainingsteil): Runde {
-  return rundeStarten(teil.rep.baum, teil.rep.seite, teil.karten, teil.plan);
+  return rundeStarten(teil.rep.baum, teil.rep.seite, teil.karten, teil.plan, Math.random, {
+    haeppchen: teil.haeppchen,
+  });
 }
 
 /** Neue Runde übernehmen; ist sie fertig, geht es mit dem nächsten Repertoire weiter. */
@@ -182,6 +185,17 @@ export function TrainingSeite() {
   const kommentar = anzeige?.art === 'richtig' ? schritt.kommentar : vorher?.kommentar;
   const eigenerSchritt = schritt.art !== 'gegner';
 
+  // Anzeige der Lernphase („NEU · 2 VON 3“ / „AUS DEM KOPF · 1 VON 3“).
+  const phase = lernphase(runde);
+  const phaseText = phase
+    ? `${phase.art === 'neu' ? 'NEU' : 'AUS DEM KOPF'} · ${phase.nummer} VON ${phase.anzahl}`
+    : '';
+  // Bei mitgelieferten Eröffnungen steht die Erklärung des Coachs direkt unter einem neuen Zug.
+  const coachText =
+    schritt.art === 'neu'
+      ? erklaerungFuer(teil.rep.quelle, schritt.fen, schritt.san)?.de
+      : undefined;
+
   // „Warum?“ nur, wenn der Zug schon zu sehen ist: neuer Zug, Nachspielen, gerade richtig gespielt
   // oder der zuletzt gespielte eigene Zug. So verrät die Erklärung nie die Antwort.
   const warumKandidaten: Schritt[] = [];
@@ -235,7 +249,12 @@ export function TrainingSeite() {
           />
         </View>
 
-        <View style={stile.statusZeile}>
+        {phase && (
+          <View style={stile.phase} accessible accessibilityLabel={phaseText}>
+            <Text style={stile.phaseText}>{phaseText}</Text>
+          </View>
+        )}
+        <View style={[stile.statusZeile, phase && stile.statusZeileNah]}>
           <View style={stile.statusText}>
             <Meldung schritt={schritt} anzeige={anzeige} seite={teil.rep.seite} />
           </View>
@@ -254,6 +273,15 @@ export function TrainingSeite() {
           </Pressable>
         </View>
         {zuegeOffen && <Zugliste schritte={runde.linie.slice(0, runde.index)} />}
+        {coachText && (
+          <View style={stile.coach}>
+            <CoachBauer groesse={54} />
+            <View style={stile.coachTexte}>
+              <Text style={stile.coachTitel}>Warum {zugText(schritt)}?</Text>
+              <Text style={stile.coachInhalt}>{coachText}</Text>
+            </View>
+          </View>
+        )}
         {kommentar ? <Text style={stile.kommentar}>{kommentar}</Text> : null}
       </ScrollView>
 
@@ -271,7 +299,7 @@ export function TrainingSeite() {
         ) : (
           <View style={stile.platz} />
         )}
-        {warum ? (
+        {warum && !coachText ? (
           <Pressable
             onPress={() => setWarumOffen(true)}
             accessibilityRole="button"
@@ -355,7 +383,7 @@ function Meldung({
     schritt.art === 'neu'
       ? `Spiel ${zugText(schritt)} – der Pfeil zeigt ihn dir`
       : schritt.art === 'abfrage'
-        ? `${amZug} · Wiederholung`
+        ? `${amZug} · ${schritt.frisch ? 'ohne Hilfe' : 'Wiederholung'}`
         : amZug;
   return (
     <View style={stile.meldung}>
@@ -477,6 +505,32 @@ const stile = StyleSheet.create({
   },
   inhalt: { paddingBottom: 16 },
   brett: { marginHorizontal: 12, marginTop: 22 },
+  phase: {
+    alignSelf: 'flex-start',
+    marginHorizontal: 20,
+    marginTop: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: FARBEN.akzentFlaeche,
+  },
+  phaseText: { color: FARBEN.akzent, fontSize: 12, fontWeight: '700', letterSpacing: 0.8 },
+  statusZeileNah: { marginTop: 10 },
+  coach: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 20,
+    backgroundColor: FARBEN.karte,
+    borderColor: FARBEN.akzentRand,
+    borderWidth: 1,
+  },
+  coachTexte: { flex: 1, gap: 4 },
+  coachTitel: { color: FARBEN.akzent, fontSize: 14, fontWeight: '700' },
+  coachInhalt: { color: FARBEN.text, fontSize: 14.5, lineHeight: 21 },
   statusZeile: {
     flexDirection: 'row',
     alignItems: 'flex-start',

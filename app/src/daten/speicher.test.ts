@@ -248,7 +248,7 @@ describe('Einstellungen der App', () => {
   it('liefert Standardwerte und speichert Änderungen', async () => {
     const sql = await testDatenbank();
     expect(await einstellungenLaden(sql)).toEqual(EINSTELLUNGEN_STANDARD);
-    expect(EINSTELLUNGEN_STANDARD).toMatchObject({ ton: false, vibration: false });
+    expect(EINSTELLUNGEN_STANDARD).toMatchObject({ ton: false, vibration: false, haeppchen: 3 });
     await einstellungAendern(sql, 'figurensatz', 'modern');
     await einstellungAendern(sql, 'ton', true);
     expect(await einstellungenLaden(sql)).toMatchObject({ figurensatz: 'modern', ton: true });

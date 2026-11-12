@@ -26,6 +26,8 @@ export type Schritt = {
   uci: string;
   /** Karten-Schlüssel bei eigenen Zügen. */
   karte?: string;
+  /** Abfrage eines Zugs, der gerade erst gezeigt wurde und noch gefestigt wird („aus dem Kopf“). */
+  frisch?: boolean;
   /** Kommentar aus der PGN zu diesem Zug (wird neutral angezeigt). */
   kommentar?: string;
 };

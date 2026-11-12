@@ -1,4 +1,4 @@
-import { NEU_PRO_TAG_BEREICH } from '@prepline/shared';
+import { HAEPPCHEN_BEREICH, NEU_PRO_TAG_BEREICH } from '@prepline/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
@@ -9,6 +9,7 @@ import {
   einstellungAendern,
   type Einstellungen,
   einstellungenLaden,
+  haeppchenBegrenzen,
   neuProTagBegrenzen,
 } from '@/daten/einstellungen';
 import { einstellungLesen } from '@/daten/speicher';
@@ -65,32 +66,22 @@ export function MehrSeite() {
       </View>
       <Abschnitt titel="Training" />
       <View style={stile.gruppe}>
-        <View style={stile.zeile}>
-          <Text style={stile.zeilenText}>Neue Züge pro Tag</Text>
-          <View style={stile.zaehler}>
-            <Pressable
-              onPress={() => aendern('neuProTag', neuProTagBegrenzen(e.neuProTag - 1))}
-              disabled={e.neuProTag <= NEU_PRO_TAG_BEREICH.min}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Weniger"
-            >
-              <Text style={stile.zaehlerZeichen}>−</Text>
-            </Pressable>
-            <Text style={stile.zaehlerWert} testID="neu-pro-tag">
-              {e.neuProTag}
-            </Text>
-            <Pressable
-              onPress={() => aendern('neuProTag', neuProTagBegrenzen(e.neuProTag + 1))}
-              disabled={e.neuProTag >= NEU_PRO_TAG_BEREICH.max}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Mehr"
-            >
-              <Text style={stile.zaehlerZeichen}>+</Text>
-            </Pressable>
-          </View>
-        </View>
+        <ZaehlerZeile
+          titel="Neue Züge pro Tag"
+          wert={e.neuProTag}
+          bereich={NEU_PRO_TAG_BEREICH}
+          onWert={(w) => aendern('neuProTag', neuProTagBegrenzen(w))}
+          testID="neu-pro-tag"
+        />
+        <ZaehlerZeile
+          titel="Neue Züge auf einmal"
+          hinweis="So viele siehst du, bevor du sie aus dem Kopf spielst"
+          wert={e.haeppchen}
+          bereich={HAEPPCHEN_BEREICH}
+          onWert={(w) => aendern('haeppchen', haeppchenBegrenzen(w))}
+          testID="haeppchen"
+          trenner
+        />
         <SchalterZeile titel="Ton" wert={e.ton} onWert={(w) => aendern('ton', w)} />
         <SchalterZeile
           titel="Vibration"
@@ -151,6 +142,59 @@ function FigurenKachel({
   );
 }
 
+/** Zeile mit Zahl und den Knöpfen − und +. */
+function ZaehlerZeile({
+  titel,
+  hinweis,
+  wert,
+  bereich,
+  onWert,
+  testID,
+  trenner = false,
+}: {
+  titel: string;
+  hinweis?: string;
+  wert: number;
+  bereich: { min: number; max: number };
+  onWert: (wert: number) => void;
+  testID: string;
+  trenner?: boolean;
+}) {
+  return (
+    <View style={[stile.zeile, trenner && stile.trenner, hinweis ? stile.zeileHoch : null]}>
+      <View style={stile.zeilenTexte}>
+        <Text style={stile.zeilenText}>{titel}</Text>
+        {hinweis ? <Text style={stile.zeilenHinweis}>{hinweis}</Text> : null}
+      </View>
+      <View style={stile.zaehler}>
+        <Pressable
+          onPress={() => onWert(wert - 1)}
+          disabled={wert <= bereich.min}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`${titel}: weniger`}
+          style={wert <= bereich.min && stile.zaehlerAus}
+        >
+          <Text style={stile.zaehlerZeichen}>−</Text>
+        </Pressable>
+        <Text style={stile.zaehlerWert} testID={testID}>
+          {wert}
+        </Text>
+        <Pressable
+          onPress={() => onWert(wert + 1)}
+          disabled={wert >= bereich.max}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`${titel}: mehr`}
+          style={wert >= bereich.max && stile.zaehlerAus}
+        >
+          <Text style={stile.zaehlerZeichen}>+</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function SchalterZeile({
   titel,
   wert,
@@ -201,7 +245,11 @@ const stile = StyleSheet.create({
     minHeight: 54,
   },
   trenner: { borderTopWidth: 1, borderTopColor: FARBEN.linie },
+  zeileHoch: { paddingVertical: 12 },
+  zeilenTexte: { flex: 1, gap: 3, paddingRight: 12 },
   zeilenText: { color: FARBEN.text, fontSize: 16 },
+  zeilenHinweis: { color: FARBEN.textLeise, fontSize: 12.5, lineHeight: 17 },
+  zaehlerAus: { opacity: 0.35 },
   zaehler: {
     flexDirection: 'row',
     alignItems: 'center',

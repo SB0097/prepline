@@ -8,6 +8,7 @@ import {
   eigenerZug,
   type Ereignis,
   gegnerZiehen,
+  lernphase,
   type Runde,
   rundeFertig,
   rundenFortschritt,
@@ -148,6 +149,38 @@ describe('Neue Züge lernen', () => {
     const schritt = alleSpielen(r, ['e4', 'e4']);
     expect(schritt.ereignisse).toEqual([bewertet('e4', true)]);
     expect(rundeFertig(schritt.runde)).toBe(true);
+  });
+
+  it('nennt die Lernphase mit Zählung im laufenden Durchgang', () => {
+    let r = starten();
+    expect(lernphase(r)).toEqual({ art: 'neu', nummer: 1, anzahl: 2 });
+    r = bisEigenerZug(spielen(r, 'e4').runde);
+    expect(lernphase(r)).toEqual({ art: 'neu', nummer: 2, anzahl: 2 });
+    // Nächster Durchgang: erst zwei Züge aus dem Kopf, dann ein neuer.
+    r = bisEigenerZug(spielen(r, 'Nf3').runde);
+    expect(aktuellerSchritt(r)).toMatchObject({ art: 'abfrage', frisch: true });
+    expect(lernphase(r)).toEqual({ art: 'abrufen', nummer: 1, anzahl: 2 });
+    r = bisEigenerZug(alleSpielen(r, ['e4', 'Nf3']).runde);
+    expect(lernphase(r)).toEqual({ art: 'neu', nummer: 1, anzahl: 1 });
+  });
+
+  it('nennt bei fälligen Wiederholungen und Gegnerzügen keine Lernphase', () => {
+    const r = rundeStarten(
+      EVANS,
+      'weiss',
+      KARTEN,
+      plan({ faellig: [schluessel('Nf3')] }),
+      immerErster,
+    );
+    // 1. e4 wird nur mitgespielt, dann zieht der Gegner, dann kommt die Wiederholung.
+    expect(lernphase(r)).toBeNull();
+    const nachE4 = eigenerZug(r, 'e4').runde;
+    expect(aktuellerSchritt(nachE4)?.art).toBe('gegner');
+    expect(lernphase(nachE4)).toBeNull();
+    const wiederholung = bisEigenerZug(nachE4);
+    expect(aktuellerSchritt(wiederholung)).toMatchObject({ art: 'abfrage', san: 'Nf3' });
+    expect(aktuellerSchritt(wiederholung)?.frisch).toBeUndefined();
+    expect(lernphase(wiederholung)).toBeNull();
   });
 
   it('lässt den Balken schon beim Zeigen und Abrufen wachsen', () => {
