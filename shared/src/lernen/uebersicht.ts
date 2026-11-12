@@ -24,6 +24,8 @@ export type Fortschritt = {
   faellig: number;
   /** Noch nie gelernte Stellungen. */
   neu: number;
+  /** Davon schon einmal gezeigt, aber noch nicht gelernt. */
+  angefangen: number;
   /** Stellungen, die sicher sitzen. */
   sicher: number;
 };
@@ -35,14 +37,17 @@ export function fortschritt(
 ): Fortschritt {
   let faellig = 0;
   let neu = 0;
+  let angefangen = 0;
   let sicher = 0;
   for (const k of karten) {
     const stand = staende.get(k.schluessel);
-    if (istNeu(stand)) neu++;
-    else if (istFaellig(stand, jetzt)) faellig++;
+    if (istNeu(stand)) {
+      neu++;
+      if (stand?.gezeigt) angefangen++;
+    } else if (istFaellig(stand, jetzt)) faellig++;
     if (sicherheit(stand) === 'sicher') sicher++;
   }
-  return { stellungen: karten.length, faellig, neu, sicher };
+  return { stellungen: karten.length, faellig, neu, angefangen, sicher };
 }
 
 /** Namensvorschlag aus den PGN-Kopfzeilen (Opening, sonst Event), sonst leer. */

@@ -1,7 +1,8 @@
 // Eine Übung: Die App spielt eine Linie ab Zug 1, man selbst spielt seine Züge.
 // Abgefragt und bewertet werden nur die fälligen Stellungen, neue werden zuerst gezeigt.
 // Bei mehreren Gegnerantworten wählt die App die, hinter der am meisten ansteht
-// („Fälliges zuerst“, Serkan 11.11.2026), bei Gleichstand zufällig.
+// („Fälliges zuerst“, Serkan 11.11.2026), bei Gleichstand zufällig. Karten mit Vorrang
+// (gerade gelernte Züge, die noch gefestigt werden) ziehen die Linie zuerst zu sich.
 import type { Zugknoten } from '../pgn/typen.ts';
 import { type Baum, stellungOhneZaehler } from '../pgn/zusammenfuehren.ts';
 import type { Seite } from '../seite.ts';
@@ -34,7 +35,14 @@ export type Uebungsauswahl = {
   faellig: ReadonlySet<string>;
   /** Neue Karten, die heute eingeführt werden dürfen. */
   neu: ReadonlySet<string>;
+  /** Karten, die bei der Wahl der Gegnerantwort vor allen anderen zählen. */
+  vorrang?: ReadonlySet<string>;
+  /** Nach so vielen neuen Zügen endet die Linie (Lernen in Häppchen). Ohne Angabe: keine Grenze. */
+  maxNeu?: number;
 };
+
+/** So viel mehr zählt eine Karte mit Vorrang bei der Wahl der Gegnerantwort. */
+const VORRANG_GEWICHT = 1000;
 
 /**
  * Baut die nächste Übungslinie. Sie endet, sobald dahinter nichts mehr ansteht
@@ -52,7 +60,8 @@ export function uebungslinie(
   const zaehler = new Map<Zugknoten[], number>();
 
   /**
-   * Anzahl anstehender Karten in diesem Teilbaum (ab Stellung fen mit diesen Fortsetzungen).
+   * Gewicht der anstehenden Karten in diesem Teilbaum (ab Stellung fen mit diesen Fortsetzungen):
+   * jede Karte zählt 1, mit Vorrang deutlich mehr.
    * Eine Karte, die über zwei Wege erreichbar ist, zählt doppelt – für die Auswahl egal.
    */
   const offen = (fen: string, kinder: Zugknoten[]): number => {
@@ -63,7 +72,9 @@ export function uebungslinie(
     if (amZug(fen) === seite) {
       const schluessel = stellungOhneZaehler(fen);
       const karte = karten.get(schluessel);
-      if (karte && ansteht(schluessel)) summe++;
+      if (karte && ansteht(schluessel)) {
+        summe += auswahl.vorrang?.has(schluessel) ? VORRANG_GEWICHT : 1;
+      }
       const weiter = karte ? kinder.find((k) => k.san === karte.zug) : kinder[0];
       if (weiter) summe += offen(weiter.fen, weiter.kinder);
     } else {
@@ -76,6 +87,8 @@ export function uebungslinie(
   if (offen(baum.startFen, baum.zuege) === 0) return [];
 
   const schritte: Schritt[] = [];
+  const maxNeu = auswahl.maxNeu ?? Infinity;
+  let neueZuege = 0;
   let fen = baum.startFen;
   let kinder = baum.zuege;
   while (kinder.length > 0 && offen(fen, kinder) > 0) {
@@ -97,6 +110,8 @@ export function uebungslinie(
         karte: schluessel,
         ...(naechster.kommentar && { kommentar: naechster.kommentar }),
       });
+      // Häppchen voll: Die Linie endet hier, die gezeigten Züge werden zuerst abgerufen.
+      if (art === 'neu' && ++neueZuege >= maxNeu) break;
     } else {
       naechster = gegnerzugWaehlen(kinder, offen, zufall);
       schritte.push({

@@ -55,7 +55,10 @@ export async function heuteLaden(sql: Sql, jetzt = Date.now()): Promise<HeuteDat
     tageszaehler(sql, heute),
     sql.alle<{ tag: string }>('SELECT tag FROM tag WHERE neu + wiederholt > 0'),
   ]);
-  const summe = (seite: Seite | null, feld: 'faellig' | 'neu' | 'sicher' | 'stellungen') =>
+  const summe = (
+    seite: Seite | null,
+    feld: 'faellig' | 'neu' | 'angefangen' | 'sicher' | 'stellungen',
+  ) =>
     liste
       .filter((r) => seite === null || r.seite === seite)
       .reduce((n, r) => n + r.fortschritt[feld], 0);
@@ -64,6 +67,9 @@ export async function heuteLaden(sql: Sql, jetzt = Date.now()): Promise<HeuteDat
     return alle === 0 ? null : Math.round((summe(seite, 'sicher') / alle) * 100);
   };
   const nochFrei = Math.max(0, einstellungen.neuProTag - zaehler.neu);
+  // Angefangene Züge (gezeigt, noch nicht gelernt) stehen immer an, frische nur bis zum Tageslimit.
+  const neuHeute = (neu: number, angefangen: number) =>
+    angefangen + Math.min(nochFrei, neu - angefangen);
 
   // „Weiter mit“: die Eröffnung mit den meisten fälligen Wiederholungen, sonst die erste mit neuen Zügen.
   const offen = liste
@@ -73,7 +79,7 @@ export async function heuteLaden(sql: Sql, jetzt = Date.now()): Promise<HeuteDat
       seite: r.seite,
       endFen: r.endFen,
       faellig: r.fortschritt.faellig,
-      neu: Math.min(nochFrei, r.fortschritt.neu),
+      neu: neuHeute(r.fortschritt.neu, r.fortschritt.angefangen),
     }))
     .filter((r) => r.faellig + r.neu > 0)
     .sort((a, b) => b.faellig - a.faellig);
@@ -81,7 +87,7 @@ export async function heuteLaden(sql: Sql, jetzt = Date.now()): Promise<HeuteDat
   return {
     anzahlRepertoires: liste.length,
     wiederholungen: summe(null, 'faellig'),
-    neu: Math.min(nochFrei, summe(null, 'neu')),
+    neu: neuHeute(summe(null, 'neu'), summe(null, 'angefangen')),
     erledigt: zaehler.neu + zaehler.wiederholt,
     serie: serieZaehlen(
       tage.map((t) => t.tag),

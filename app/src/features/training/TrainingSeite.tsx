@@ -124,8 +124,14 @@ export function TrainingSeite() {
     return () => clearTimeout(zeit);
   }, [runde, schritt, anzeige, teile, warumOffen]);
 
-  const gesamt = teile.reduce((n, t) => n + t.plan.faellig.length + t.plan.neu.length, 0);
-  const erledigt = erledigtVorher + (runde ? rundenFortschritt(runde).erledigt : 0);
+  const gesamt = teile.reduce(
+    (n, t) => n + t.plan.faellig.length + t.plan.neu.length + t.plan.angefangen.length,
+    0,
+  );
+  const stand = runde ? rundenFortschritt(runde) : null;
+  const erledigt = erledigtVorher + (stand?.erledigt ?? 0);
+  // Der Balken wächst schon beim Zeigen und bei jeder richtigen Antwort, nicht erst pro fertiger Karte.
+  const balken = gesamt ? (erledigtVorher + (stand ? stand.anteil * stand.gesamt : 0)) / gesamt : 0;
 
   if (!vorbereitung) return <SafeAreaView style={stile.seite} />;
   if (!runde || !teil || !schritt) {
@@ -208,7 +214,7 @@ export function TrainingSeite() {
         </Text>
       </View>
       <View style={stile.balken}>
-        <View style={[stile.balkenVoll, { width: `${gesamt ? (erledigt / gesamt) * 100 : 0}%` }]}>
+        <View style={[stile.balkenVoll, { width: `${Math.min(100, balken * 100)}%` }]}>
           <Verlauf />
         </View>
       </View>

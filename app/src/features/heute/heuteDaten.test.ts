@@ -78,6 +78,20 @@ describe('Zahlen für „Heute“', () => {
     expect((await heuteLaden(sql, JETZT)).weiter).toBeNull();
   });
 
+  it('zählt angefangene Züge auch über dem Tageslimit mit', async () => {
+    const sql = await testDatenbank();
+    const { ids } = await pgnImportieren(sql, EVANS, { name: 'Italienisch', seite: 'weiss' });
+    const rep = (await repertoireLaden(sql, ids[0]!))!;
+    const karte = kartenAusBaum(rep.baum, 'weiss')[0]!;
+    // Gezeigt, aber die Runde wurde abgebrochen, bevor der Zug gelernt war.
+    await lernstandSpeichern(sql, ids[0]!, karte.schluessel, gezeigt(neuerLernstand(JETZT), JETZT));
+    await einstellungAendern(sql, 'neuProTag', 5);
+    await tageszaehlerErhoehen(sql, tagSchluessel(JETZT), { neu: 5 });
+    const heute = await heuteLaden(sql, JETZT);
+    expect(heute.neu).toBe(1);
+    expect(heute.weiter).toMatchObject({ name: 'Italienisch', neu: 1 });
+  });
+
   it('liest die Serie aus den Tageszählern', async () => {
     const sql = await testDatenbank();
     for (const zurueck of [0, 1, 2, 4]) {

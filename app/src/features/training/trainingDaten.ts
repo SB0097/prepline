@@ -58,8 +58,10 @@ export async function trainingVorbereiten(
       heuteSchonEingefuehrt: schonEingefuehrt,
     });
     // Das Tageslimit für neue Züge gilt über alle Repertoires zusammen.
-    schonEingefuehrt += plan.neu.filter((k) => !staende.get(k)?.gezeigt).length;
-    if (plan.faellig.length + plan.neu.length > 0) teile.push({ rep, karten, staende, plan });
+    schonEingefuehrt += plan.neu.length;
+    if (plan.faellig.length + plan.neu.length + plan.angefangen.length > 0) {
+      teile.push({ rep, karten, staende, plan });
+    }
   }
   return { teile, einstellungen };
 }

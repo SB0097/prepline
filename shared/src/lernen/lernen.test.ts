@@ -145,11 +145,16 @@ describe('Tagesplan', () => {
     expect(naechsterTermin(karten, staende, JETZT)).toBe(JETZT + TAG);
   });
 
-  it('nimmt schon gezeigte neue Karten immer mit, auch über dem Limit', () => {
+  it('führt schon gezeigte, noch nicht gelernte Karten getrennt und ohne Limit', () => {
     const letzte = karten[karten.length - 1]!;
     const staende = new Map([[letzte.schluessel, gezeigt(neuerLernstand(JETZT), JETZT)]]);
     const plan = tagesplan(karten, staende, JETZT, { heuteSchonEingefuehrt: 10 });
-    expect(plan.neu).toEqual([letzte.schluessel]);
+    expect(plan.neu).toEqual([]);
+    expect(plan.angefangen).toEqual([letzte.schluessel]);
+    // Auch mit freiem Limit wird die Karte nicht noch einmal als neu eingeplant.
+    expect(tagesplan(karten, staende, JETZT, { neuProTag: 30 }).neu).not.toContain(
+      letzte.schluessel,
+    );
   });
 });
 
@@ -193,6 +198,27 @@ describe('Übungslinie', () => {
     const letzte = uebungslinie(evans, 'weiss', map, auswahl, () => 0.99);
     expect(kurz(erste).at(-2)).toBe('gegner:Ba5');
     expect(kurz(letzte).at(-2)).toBe('gegner:Be7');
+  });
+
+  it('endet nach einem Häppchen neuer Züge', () => {
+    const neu = new Set(karten.map((k) => k.schluessel));
+    const linie = uebungslinie(evans, 'weiss', map, { faellig: keiner, neu, maxNeu: 2 });
+    expect(kurz(linie)).toEqual(['neu:e4', 'gegner:e5', 'neu:Nf3']);
+  });
+
+  it('geht zuerst dorthin, wo Karten Vorrang haben', () => {
+    const d4 = karten.filter((k) => k.zug === 'd4').map((k) => k.schluessel);
+    const auswahl = { faellig: new Set(d4), neu: keiner };
+    const hinterBe7 = uebungslinie(evans, 'weiss', map, auswahl, () => 0.99).at(-1)!.karte!;
+    // Ohne Vorrang entscheidet der Zufall (hier: die erste Antwort), mit Vorrang die Karte.
+    const linie = uebungslinie(
+      evans,
+      'weiss',
+      map,
+      { ...auswahl, vorrang: new Set([hinterBe7]) },
+      () => 0,
+    );
+    expect(kurz(linie).at(-2)).toBe('gegner:Be7');
   });
 
   it('liefert eine leere Linie, wenn heute nichts mehr dran ist', () => {
