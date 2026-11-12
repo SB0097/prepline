@@ -4,6 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
 
+/** Platz für die Knopfreihe des Trainings, damit der Bauer nicht darüber liegt. */
+const ABSTAND_UNTEN = 96;
+
 // „Warum?“ als Sprechblase (Skizze W2, Serkan 11.11.2026): der Coach-Bauer unten links
 // erklärt den Zug in einer Blase darüber. Tippen irgendwo schließt sie.
 export function WarumBlase({
@@ -27,7 +30,7 @@ export function WarumBlase({
       statusBarTranslucent
     >
       <Pressable
-        style={[stile.hintergrund, { paddingBottom: unten + 16 }]}
+        style={[stile.hintergrund, { paddingBottom: unten + ABSTAND_UNTEN }]}
         onPress={onSchliessen}
         accessibilityRole="button"
         accessibilityLabel="Erklärung schließen"
@@ -51,7 +54,7 @@ const stile = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     paddingHorizontal: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   blase: {
     backgroundColor: FARBEN.karte,

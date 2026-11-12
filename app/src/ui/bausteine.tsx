@@ -1,6 +1,6 @@
 // Wiederkehrende Bausteine im Stil „Graphit“: Knöpfe, Umschalter, Seitenköpfe.
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -25,19 +25,31 @@ export function zurueck(): void {
 
 /**
  * Farbverlauf in der Akzentfarbe als Hintergrund. Das Elternelement braucht
- * `overflow: 'hidden'` und eine Rundung.
+ * `overflow: 'hidden'` und eine Rundung. Die Fläche wird gemessen, weil das SVG
+ * eine feste Größe in Pixeln braucht.
  */
 export function Verlauf({ schraeg = false }: { schraeg?: boolean }) {
+  const [flaeche, setFlaeche] = useState({ breite: 0, hoehe: 0 });
   return (
-    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
-      <Defs>
-        <LinearGradient id="verlauf" x1="0" y1="0" x2="1" y2={schraeg ? '1' : '0'}>
-          <Stop offset="0" stopColor={FARBEN.akzent} />
-          <Stop offset="1" stopColor={FARBEN.akzentHell} />
-        </LinearGradient>
-      </Defs>
-      <Rect width="100%" height="100%" fill="url(#verlauf)" />
-    </Svg>
+    <View
+      style={StyleSheet.absoluteFill}
+      pointerEvents="none"
+      onLayout={(e) =>
+        setFlaeche({ breite: e.nativeEvent.layout.width, hoehe: e.nativeEvent.layout.height })
+      }
+    >
+      {flaeche.breite > 0 && (
+        <Svg width={flaeche.breite} height={flaeche.hoehe}>
+          <Defs>
+            <LinearGradient id="verlauf" x1="0" y1="0" x2="1" y2={schraeg ? '1' : '0'}>
+              <Stop offset="0" stopColor={FARBEN.akzent} />
+              <Stop offset="1" stopColor={FARBEN.akzentHell} />
+            </LinearGradient>
+          </Defs>
+          <Rect width={flaeche.breite} height={flaeche.hoehe} fill="url(#verlauf)" />
+        </Svg>
+      )}
+    </View>
   );
 }
 
