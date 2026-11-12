@@ -15,10 +15,9 @@ import { Zeichen } from '@/ui/symbole';
 
 // Repertoire-Seite (Skizze Graphit, 12.11.2026): Umschalter Weiß/Schwarz mit Anzahl,
 // Kacheln mit randlosem Mini-Brett, Status, Prozent und Fortschrittsbalken.
+// Hinzugefügt wird nur über das Plus oben rechts (Serkan 12.11.2026).
 const RAND = 16;
 const ABSTAND = 12;
-/** Höhe des Textbereichs unter dem Mini-Brett. */
-const FUSS = 65;
 
 async function laden(sql: Sql) {
   const [liste, einstellungen] = await Promise.all([
@@ -64,22 +63,15 @@ export function RepertoireSeite() {
           liste.map((r) => (
             <Kachel key={r.id} rep={r} breite={breite} figurensatz={daten.figurensatz} />
           ))}
-        <Pressable
-          onPress={hinzufuegen}
-          accessibilityRole="button"
-          accessibilityLabel="Eröffnung hinzufügen"
-          style={({ pressed }) => [
-            stile.neu,
-            { width: breite, height: breite + FUSS },
-            pressed && { opacity: 0.8 },
-          ]}
-        >
-          <View style={stile.neuKreis}>
-            <Zeichen name="plus" farbe={FARBEN.akzent} />
-          </View>
-          <Text style={stile.neuText}>Hinzufügen</Text>
-        </Pressable>
       </View>
+      {daten && liste.length === 0 && (
+        <View style={stile.leer}>
+          <Text style={stile.leerTitel}>
+            Noch keine Eröffnung mit {seite === 'weiss' ? 'Weiß' : 'Schwarz'}
+          </Text>
+          <Text style={stile.leerText}>Tippe oben rechts auf das Plus, um eine hinzuzufügen.</Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -151,22 +143,7 @@ const stile = StyleSheet.create({
   prozent: { color: FARBEN.textLeise, fontSize: 12, fontWeight: '600' },
   balken: { height: 5, backgroundColor: FARBEN.karteHell },
   balkenVoll: { height: 5, backgroundColor: FARBEN.akzent },
-  neu: {
-    borderRadius: RUNDUNG,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: FARBEN.linie,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  neuKreis: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: FARBEN.karteHell,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  neuText: { color: FARBEN.textLeise, fontSize: 14, fontWeight: '600' },
+  leer: { alignItems: 'center', gap: 6, paddingHorizontal: 24, paddingTop: 56 },
+  leerTitel: { color: FARBEN.text, fontSize: 18, fontWeight: '700', textAlign: 'center' },
+  leerText: { color: FARBEN.textLeise, fontSize: 15, lineHeight: 21, textAlign: 'center' },
 });
