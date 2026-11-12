@@ -39,6 +39,8 @@ type Props = {
   bedienbar?: boolean;
   /** Koordinaten a–h und 1–8 in den Ecken (aus bei Mini-Brettern). */
   koordinaten?: boolean;
+  /** Rundung der vier Brettecken in Pixeln. */
+  rundung?: number;
   onZug?: (zug: Brettzug) => void;
 };
 
@@ -55,6 +57,7 @@ export function Schachbrett({
   pfeil,
   bedienbar = true,
   koordinaten = true,
+  rundung = 0,
   onZug,
 }: Props) {
   const f = groesse / 8;
@@ -150,6 +153,16 @@ export function Schachbrett({
     const index = indexAusFeld(feld, ansicht);
     return { left: (index % 8) * f, top: Math.floor(index / 8) * f, width: f, height: f };
   };
+  // Nur die vier Eckfelder werden abgerundet, so wird eine gezogene Figur am Rand nicht abgeschnitten.
+  const eckenRundung = (feld: Feld) => {
+    const index = indexAusFeld(feld, ansicht);
+    return {
+      ...(index === 0 && { borderTopLeftRadius: rundung }),
+      ...(index === 7 && { borderTopRightRadius: rundung }),
+      ...(index === 56 && { borderBottomLeftRadius: rundung }),
+      ...(index === 63 && { borderBottomRightRadius: rundung }),
+    };
+  };
   const hervorgehoben = [
     ...(letzterZug ? felderAusUci(letzterZug) : []),
     ...(auswahl ? [auswahl] : []),
@@ -172,6 +185,7 @@ export function Schachbrett({
           style={[
             styles.feld,
             ecke(feld),
+            eckenRundung(feld),
             { backgroundColor: hell ? FARBEN.brettHell : FARBEN.brettDunkel },
           ]}
         >
@@ -187,14 +201,19 @@ export function Schachbrett({
         <View
           key={`h${i}`}
           pointerEvents="none"
-          style={[styles.feld, ecke(feld), { backgroundColor: FARBEN.brettMarkierung }]}
+          style={[
+            styles.feld,
+            ecke(feld),
+            eckenRundung(feld),
+            { backgroundColor: FARBEN.brettMarkierung },
+          ]}
         />
       ))}
       {markierungen.map(({ feld, farbe }) => (
         <View
           key={`m${feld}`}
           pointerEvents="none"
-          style={[styles.feld, ecke(feld), { backgroundColor: farbe }]}
+          style={[styles.feld, ecke(feld), eckenRundung(feld), { backgroundColor: farbe }]}
         />
       ))}
       {felder.map(({ feld, figur }) =>
@@ -306,6 +325,6 @@ const styles = StyleSheet.create({
   mitte: { alignItems: 'center', justifyContent: 'center' },
   reihe: { position: 'absolute', left: 3, top: 1, fontWeight: '700' },
   linie: { position: 'absolute', right: 3, bottom: 0, fontWeight: '700' },
-  punkt: { backgroundColor: 'rgba(10, 18, 48, 0.35)' },
-  ring: { borderColor: 'rgba(10, 18, 48, 0.35)' },
+  punkt: { backgroundColor: 'rgba(13, 14, 17, 0.32)' },
+  ring: { borderColor: 'rgba(13, 14, 17, 0.32)' },
 });

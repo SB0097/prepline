@@ -4,21 +4,19 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { einstellungenLaden } from '@/daten/einstellungen';
-import { repertoireUebersicht, type RepertoireUebersicht } from '@/daten/speicher';
+import { type RepertoireUebersicht, repertoireUebersicht } from '@/daten/speicher';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
-import { RUNDUNG, SeitenTitel, Umschalter } from '@/ui/bausteine';
+import { RundKnopf, RUNDUNG, SeitenTitel, Umschalter } from '@/ui/bausteine';
 import type { Figurensatz } from '@/ui/brett/figuren';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
+import { Zeichen } from '@/ui/symbole';
 
-// Repertoire-Seite (Skizze R3, 11.11.2026): Umschalter Weiß/Schwarz, Kacheln mit Mini-Brett.
-const SEITEN = [
-  { wert: 'weiss', titel: 'Weiß' },
-  { wert: 'schwarz', titel: 'Schwarz' },
-] as const;
-
-const RAND = 20;
+// Repertoire-Seite (Skizze Graphit, 12.11.2026): Umschalter Weiß/Schwarz mit Anzahl,
+// Kacheln mit randlosem Mini-Brett, Status, Prozent und Fortschrittsbalken.
+// Hinzugefügt wird nur über das Plus oben rechts (Serkan 12.11.2026).
+const RAND = 16;
 const ABSTAND = 12;
 
 async function laden(sql: Sql) {
@@ -32,28 +30,48 @@ async function laden(sql: Sql) {
 export function RepertoireSeite() {
   const daten = useGeladen(laden);
   const [seite, setSeite] = useState<Seite>('weiss');
-  const breite = (useWindowDimensions().width - 2 * RAND - ABSTAND) / 2;
+  const breite = Math.floor((useWindowDimensions().width - 2 * RAND - ABSTAND) / 2);
   const liste = daten?.liste.filter((r) => r.seite === seite) ?? [];
+  const anzahl = (s: Seite) => daten?.liste.filter((r) => r.seite === s).length;
+  const hinzufuegen = () => router.push('/import');
 
   return (
     <ScrollView style={stile.seite} contentContainerStyle={stile.inhalt}>
-      <SeitenTitel titel="Repertoire" />
-      <Umschalter werte={SEITEN} wert={seite} onWahl={setSeite} />
+      <SeitenTitel
+        titel="Repertoire"
+        rechts={
+          <View style={stile.plusKnopf}>
+            <RundKnopf
+              symbol="plus"
+              art="akzent"
+              beschriftung="Eröffnung hinzufügen"
+              onPress={hinzufuegen}
+            />
+          </View>
+        }
+      />
+      <Umschalter
+        werte={[
+          { wert: 'weiss', titel: 'Weiß', seite: 'weiss', anzahl: anzahl('weiss') },
+          { wert: 'schwarz', titel: 'Schwarz', seite: 'schwarz', anzahl: anzahl('schwarz') },
+        ]}
+        wert={seite}
+        onWahl={setSeite}
+      />
       <View style={stile.raster}>
         {daten &&
           liste.map((r) => (
             <Kachel key={r.id} rep={r} breite={breite} figurensatz={daten.figurensatz} />
           ))}
-        <Pressable
-          onPress={() => router.push('/import')}
-          accessibilityRole="button"
-          accessibilityLabel="Eröffnung hinzufügen"
-          style={[stile.neu, { width: breite, height: breite + 66 }]}
-        >
-          <Text style={stile.plus}>+</Text>
-          <Text style={stile.neuText}>Hinzufügen</Text>
-        </Pressable>
       </View>
+      {daten && liste.length === 0 && (
+        <View style={stile.leer}>
+          <Text style={stile.leerTitel}>
+            Noch keine Eröffnung mit {seite === 'weiss' ? 'Weiß' : 'Schwarz'}
+          </Text>
+          <Text style={stile.leerText}>Tippe oben rechts auf das Plus, um eine hinzuzufügen.</Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -67,30 +85,41 @@ function Kachel({
   breite: number;
   figurensatz: Figurensatz;
 }) {
-  const { faellig, neu } = rep.fortschritt;
+  const { faellig, neu, sicher, stellungen } = rep.fortschritt;
+  const offen = faellig + neu > 0;
   const status = faellig > 0 ? `${faellig} fällig` : neu > 0 ? `${neu} neu` : 'alles gut';
-  const brett = breite - 24;
+  const prozent = stellungen === 0 ? 0 : Math.round((sicher / stellungen) * 100);
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/eroeffnung/[id]', params: { id: String(rep.id) } })}
       accessibilityRole="button"
-      accessibilityLabel={`${rep.name}, ${status}`}
+      accessibilityLabel={`${rep.name}, ${status}, ${prozent} Prozent sicher`}
       style={({ pressed }) => [stile.kachel, { width: breite }, pressed && { opacity: 0.85 }]}
     >
-      <View style={stile.brett}>
-        <Schachbrett
-          fen={rep.endFen}
-          groesse={brett}
-          ansicht={rep.seite}
-          figurensatz={figurensatz}
-          bedienbar={false}
-          koordinaten={false}
-        />
+      {/* Der Rand der Kachel liegt innen, deshalb ist das Brett zwei Pixel schmaler. */}
+      <Schachbrett
+        fen={rep.endFen}
+        groesse={breite - 2}
+        ansicht={rep.seite}
+        figurensatz={figurensatz}
+        bedienbar={false}
+        koordinaten={false}
+      />
+      <View style={stile.fuss}>
+        <Text style={stile.name} numberOfLines={1}>
+          {rep.name}
+        </Text>
+        <View style={stile.statusZeile}>
+          {!offen && <Zeichen name="haken" farbe={FARBEN.richtig} groesse={15} />}
+          <Text style={[stile.status, { color: offen ? FARBEN.akzent : FARBEN.richtig }]}>
+            {status}
+          </Text>
+          <Text style={stile.prozent}>{prozent} %</Text>
+        </View>
       </View>
-      <Text style={stile.name} numberOfLines={1}>
-        {rep.name}
-      </Text>
-      <Text style={[stile.status, faellig + neu > 0 && stile.statusAktiv]}>{status}</Text>
+      <View style={stile.balken}>
+        <View style={[stile.balkenVoll, { width: `${prozent}%` }]} />
+      </View>
     </Pressable>
   );
 }
@@ -98,21 +127,23 @@ function Kachel({
 const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
   inhalt: { paddingHorizontal: RAND, paddingBottom: 32 },
-  raster: { flexDirection: 'row', flexWrap: 'wrap', gap: ABSTAND, marginTop: 20 },
-  kachel: { backgroundColor: FARBEN.karte, borderRadius: RUNDUNG, padding: 12, gap: 4 },
-  brett: { borderRadius: 10, overflow: 'hidden', marginBottom: 8 },
-  name: { color: FARBEN.text, fontSize: 15, fontWeight: '700' },
-  status: { color: FARBEN.textLeise, fontSize: 12 },
-  statusAktiv: { color: FARBEN.akzent },
-  neu: {
+  plusKnopf: { marginBottom: 2 },
+  raster: { flexDirection: 'row', flexWrap: 'wrap', gap: ABSTAND, marginTop: 18 },
+  kachel: {
+    backgroundColor: FARBEN.karte,
+    borderColor: FARBEN.rand,
+    borderWidth: 1,
     borderRadius: RUNDUNG,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: FARBEN.linie,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+    overflow: 'hidden',
   },
-  plus: { color: FARBEN.akzent, fontSize: 36 },
-  neuText: { color: FARBEN.textLeise, fontSize: 14 },
+  fuss: { paddingHorizontal: 14, paddingTop: 11, paddingBottom: 12, gap: 3 },
+  name: { color: FARBEN.text, fontSize: 15.5, fontWeight: '700' },
+  statusZeile: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  status: { flex: 1, fontSize: 13, fontWeight: '700' },
+  prozent: { color: FARBEN.textLeise, fontSize: 12, fontWeight: '600' },
+  balken: { height: 5, backgroundColor: FARBEN.karteHell },
+  balkenVoll: { height: 5, backgroundColor: FARBEN.akzent },
+  leer: { alignItems: 'center', gap: 6, paddingHorizontal: 24, paddingTop: 56 },
+  leerTitel: { color: FARBEN.text, fontSize: 18, fontWeight: '700', textAlign: 'center' },
+  leerText: { color: FARBEN.textLeise, fontSize: 15, lineHeight: 21, textAlign: 'center' },
 });

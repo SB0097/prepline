@@ -29,10 +29,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
-import { Knopf, RUNDUNG, zurueck } from '@/ui/bausteine';
+import { Knopf, RundKnopf, Seitenpunkt, Verlauf, zurueck } from '@/ui/bausteine';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { type Feldmarkierung, Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
+import { Zeichen } from '@/ui/symbole';
 
 import { WarumBlase } from './WarumBlase';
 
@@ -43,8 +44,9 @@ import {
   type Trainingsvorbereitung,
 } from './trainingDaten';
 
-// Trainingsbildschirm (Skizze Variante 1 + Zugliste auf Antippen, Rückmeldungen grün/rot/gelb,
-// Tipp-Knopf; Serkan 11.11.2026). Der „Warum?“-Knopf kommt mit den offiziellen Eröffnungen (M7).
+// Trainingsbildschirm (Skizze Graphit, Serkan 12.11.2026): runder Schließen-Knopf, Fortschrittsbalken,
+// Brett fast randlos, darunter „Dein Zug“ und der Knopf für die Zugliste, unten Tipp und „Warum?“.
+// Rückmeldungen grün/rot/gelb wie am 11.11. abgestimmt.
 
 type Anzeige =
   | { art: 'richtig'; fen: string; felder: [Feld, Feld] }
@@ -60,7 +62,7 @@ const GEGNER_PAUSE = 450;
 const MARKIERUNG = {
   richtig: 'rgba(61, 214, 140, 0.55)',
   falsch: 'rgba(255, 107, 107, 0.6)',
-  alternative: 'rgba(245, 181, 74, 0.6)',
+  alternative: 'rgba(255, 150, 60, 0.7)',
 };
 
 /** Wo die Runde steht: welches Repertoire, welche Runde, wie viel schon erledigt ist. */
@@ -169,7 +171,7 @@ export function TrainingSeite() {
   const zeigtZug = (schritt.art === 'neu' || runde.nachspielen) && anzeige?.art !== 'richtig';
   const markierungen: Feldmarkierung[] = [
     ...(anzeige ? anzeige.felder.map((feld) => ({ feld, farbe: MARKIERUNG[anzeige.art] })) : []),
-    ...(tippFeld ? [{ feld: tippFeld, farbe: FARBEN.brettMarkierung }] : []),
+    ...(tippFeld ? [{ feld: tippFeld, farbe: FARBEN.brettTipp }] : []),
   ];
   const kommentar = anzeige?.art === 'richtig' ? schritt.kommentar : vorher?.kommentar;
   const eigenerSchritt = schritt.art !== 'gegner';
@@ -195,15 +197,9 @@ export function TrainingSeite() {
   return (
     <SafeAreaView style={stile.seite}>
       <View style={stile.kopf}>
-        <Pressable
-          onPress={zurueck}
-          hitSlop={16}
-          accessibilityRole="button"
-          accessibilityLabel="Training beenden"
-          style={stile.kopfSeite}
-        >
-          <Text style={stile.schliessen}>×</Text>
-        </Pressable>
+        <View style={stile.kopfSeite}>
+          <RundKnopf symbol="kreuz" beschriftung="Training beenden" onPress={zurueck} />
+        </View>
         <Text style={stile.titel} numberOfLines={1}>
           {teil.rep.name}
         </Text>
@@ -212,14 +208,17 @@ export function TrainingSeite() {
         </Text>
       </View>
       <View style={stile.balken}>
-        <View style={[stile.balkenVoll, { width: `${gesamt ? (erledigt / gesamt) * 100 : 0}%` }]} />
+        <View style={[stile.balkenVoll, { width: `${gesamt ? (erledigt / gesamt) * 100 : 0}%` }]}>
+          <Verlauf />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={stile.inhalt}>
         <View style={stile.brett}>
           <Schachbrett
             fen={anzeige?.art === 'richtig' ? anzeige.fen : schritt.fen}
-            groesse={breite - 20}
+            groesse={breite - 24}
+            rundung={14}
             ansicht={teil.rep.seite}
             figurensatz={einstellungen.figurensatz}
             {...(anzeige?.art !== 'richtig' && vorher && { letzterZug: vorher.uci })}
@@ -230,18 +229,25 @@ export function TrainingSeite() {
           />
         </View>
 
-        <Pressable
-          onPress={() => setZuegeOffen(!zuegeOffen)}
-          accessibilityRole="button"
-          style={stile.zuegeKnopf}
-        >
-          <Text style={stile.zuegeKnopfText}>
-            {zuegeOffen ? 'Züge ausblenden ▴' : 'Züge anzeigen ▾'}
-          </Text>
-        </Pressable>
+        <View style={stile.statusZeile}>
+          <View style={stile.statusText}>
+            <Meldung schritt={schritt} anzeige={anzeige} seite={teil.rep.seite} />
+          </View>
+          <Pressable
+            onPress={() => setZuegeOffen(!zuegeOffen)}
+            accessibilityRole="button"
+            accessibilityLabel={zuegeOffen ? 'Züge ausblenden' : 'Züge anzeigen'}
+            style={stile.zuegeKnopf}
+          >
+            <Text style={stile.zuegeKnopfText}>Züge</Text>
+            <Zeichen
+              name={zuegeOffen ? 'pfeilOben' : 'pfeilUnten'}
+              farbe={FARBEN.textLeise}
+              groesse={18}
+            />
+          </Pressable>
+        </View>
         {zuegeOffen && <Zugliste schritte={runde.linie.slice(0, runde.index)} />}
-
-        <Meldung schritt={schritt} anzeige={anzeige} seite={teil.rep.seite} />
         {kommentar ? <Text style={stile.kommentar}>{kommentar}</Text> : null}
       </ScrollView>
 
@@ -251,23 +257,26 @@ export function TrainingSeite() {
             onPress={tipp}
             disabled={runde.tipp || anzeige?.art === 'richtig'}
             accessibilityRole="button"
-            style={[stile.tipp, runde.tipp && { opacity: 0.4 }]}
+            style={[stile.unterKnopf, stile.tipp, runde.tipp && { opacity: 0.4 }]}
           >
+            <Zeichen name="birne" farbe={FARBEN.text} />
             <Text style={stile.tippText}>Tipp</Text>
           </Pressable>
         ) : (
-          <View />
+          <View style={stile.platz} />
         )}
-        {warum && (
+        {warum ? (
           <Pressable
             onPress={() => setWarumOffen(true)}
             accessibilityRole="button"
             accessibilityLabel={`Warum ${zugText(warum.schritt)}?`}
-            style={stile.warum}
+            style={[stile.unterKnopf, stile.warum]}
           >
-            <CoachBauer groesse={26} />
+            <CoachBauer groesse={28} />
             <Text style={stile.warumText}>Warum?</Text>
           </Pressable>
+        ) : (
+          <View style={stile.platz} />
         )}
       </View>
       {warum?.text && (
@@ -331,7 +340,7 @@ function Meldung({
   if (schritt.art === 'gegner') {
     return (
       <View style={stile.meldung}>
-        <Text style={[stile.meldungTitel, { color: FARBEN.textLeise }]}>Gegner zieht …</Text>
+        <Text style={[stile.meldungTitelGross, { color: FARBEN.textLeise }]}>Gegner zieht …</Text>
       </View>
     );
   }
@@ -344,7 +353,10 @@ function Meldung({
         : amZug;
   return (
     <View style={stile.meldung}>
-      <Text style={stile.meldungTitel}>{titel}</Text>
+      <View style={stile.titelZeile}>
+        {schritt.art !== 'neu' && <Seitenpunkt seite={seite} groesse={18} />}
+        <Text style={stile.meldungTitelGross}>{titel}</Text>
+      </View>
       <Text style={stile.meldungText}>{text}</Text>
     </View>
   );
@@ -439,34 +451,49 @@ function FertigAnsicht({ geuebt, fehler }: { geuebt: number; fehler: number }) {
 
 const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund, paddingBottom: 16 },
-  kopf: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8 },
-  kopfSeite: { width: 56 },
-  schliessen: { color: FARBEN.textLeise, fontSize: 30, lineHeight: 32 },
-  titel: { flex: 1, textAlign: 'center', color: FARBEN.text, fontSize: 17, fontWeight: '700' },
-  zaehler: { color: FARBEN.textLeise, fontSize: 14, textAlign: 'right' },
+  kopf: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 },
+  kopfSeite: { width: 64 },
+  titel: { flex: 1, textAlign: 'center', color: FARBEN.text, fontSize: 18, fontWeight: '700' },
+  zaehler: { color: FARBEN.textLeise, fontSize: 15, fontWeight: '700', textAlign: 'right' },
   balken: {
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: FARBEN.linie,
-    marginHorizontal: 20,
-    marginTop: 12,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: FARBEN.karteHell,
+    marginHorizontal: 16,
+    marginTop: 14,
     overflow: 'hidden',
   },
-  balkenVoll: { height: 5, borderRadius: 2.5, backgroundColor: FARBEN.akzent },
-  inhalt: { paddingBottom: 16 },
-  brett: { marginHorizontal: 10, marginTop: 16 },
-  zuegeKnopf: {
-    alignSelf: 'flex-start',
-    marginHorizontal: 20,
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 16,
-    backgroundColor: FARBEN.karte,
+  balkenVoll: {
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: FARBEN.akzent,
+    overflow: 'hidden',
   },
-  zuegeKnopfText: { color: FARBEN.textLeise, fontSize: 13 },
-  zugliste: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginHorizontal: 20, marginTop: 10 },
-  zuglisteLeer: { color: FARBEN.textLeise, fontSize: 14, marginHorizontal: 20, marginTop: 10 },
+  inhalt: { paddingBottom: 16 },
+  brett: { marginHorizontal: 12, marginTop: 22 },
+  statusZeile: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginHorizontal: 20,
+    marginTop: 22,
+  },
+  statusText: { flex: 1 },
+  zuegeKnopf: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 16,
+    paddingRight: 12,
+    paddingVertical: 9,
+    borderRadius: 20,
+    backgroundColor: FARBEN.karte,
+    borderColor: FARBEN.linie,
+    borderWidth: 1,
+  },
+  zuegeKnopfText: { color: FARBEN.text, fontSize: 14, fontWeight: '700' },
+  zugliste: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginHorizontal: 20, marginTop: 14 },
+  zuglisteLeer: { color: FARBEN.textLeise, fontSize: 14, marginHorizontal: 20, marginTop: 14 },
   zugPille: {
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -474,8 +501,10 @@ const stile = StyleSheet.create({
     backgroundColor: FARBEN.karte,
   },
   zugPilleText: { color: FARBEN.text, fontSize: 13 },
-  meldung: { marginHorizontal: 24, marginTop: 20, gap: 4 },
-  rueckmeldung: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20 },
+  meldung: { gap: 4 },
+  rueckmeldung: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  titelZeile: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  meldungTitelGross: { color: FARBEN.text, fontSize: 28, fontWeight: '700' },
   rueckmeldungText: { flex: 1, gap: 2 },
   kreis: {
     width: 32,
@@ -487,43 +516,42 @@ const stile = StyleSheet.create({
   meldungTitel: { color: FARBEN.text, fontSize: 22, fontWeight: '700' },
   meldungText: { color: FARBEN.textLeise, fontSize: 14 },
   kommentar: {
-    marginHorizontal: 20,
+    marginHorizontal: 16,
     marginTop: 16,
     padding: 14,
     borderRadius: 16,
     backgroundColor: FARBEN.karte,
+    borderColor: FARBEN.rand,
+    borderWidth: 1,
     color: FARBEN.text,
     fontSize: 14,
     lineHeight: 20,
   },
   unten: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    minHeight: 48,
+    gap: 16,
+    paddingHorizontal: 16,
+    minHeight: 58,
   },
-  warum: {
+  platz: { flex: 1 },
+  unterKnopf: {
+    flex: 1,
+    height: 58,
+    borderRadius: 29,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.linie,
-    borderWidth: 1,
-    borderRadius: RUNDUNG,
-    paddingLeft: 12,
-    paddingRight: 18,
-    paddingVertical: 8,
+    justifyContent: 'center',
+    gap: 10,
   },
-  warumText: { color: FARBEN.text, fontSize: 15, fontWeight: '700' },
-  tipp: {
-    borderWidth: 2,
-    borderColor: FARBEN.linie,
-    borderRadius: RUNDUNG,
-    paddingHorizontal: 26,
-    paddingVertical: 10,
+  warum: {
+    backgroundColor: FARBEN.akzentFlaeche,
+    borderColor: FARBEN.akzentRand,
+    borderWidth: 1.5,
   },
-  tippText: { color: FARBEN.text, fontSize: 15 },
+  warumText: { color: FARBEN.akzent, fontSize: 17, fontWeight: '700' },
+  tipp: { backgroundColor: FARBEN.karteHell },
+  tippText: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
   fertig: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   fertigKreis: {
     width: 108,

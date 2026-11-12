@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "prepline",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0C1224",
+    "backgroundColor": "#0D0E11",
     "ios": {
       "bundleIdentifier": "de.tapwerkapps.prepline",
       "supportsTablet": true
@@ -24,7 +24,7 @@
         "com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#0C1224",
+        "backgroundColor": "#0D0E11",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -35,7 +35,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0C1224",
+          "backgroundColor": "#0D0E11",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 160
         }

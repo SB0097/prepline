@@ -185,7 +185,7 @@ const stile = StyleSheet.create({
     padding: 14,
     borderRadius: 16,
     backgroundColor: FARBEN.karte,
-    borderColor: 'rgba(108, 140, 255, 0.4)',
+    borderColor: FARBEN.akzentRand,
     borderWidth: 1,
   },
   coachText: { flex: 1, gap: 4 },

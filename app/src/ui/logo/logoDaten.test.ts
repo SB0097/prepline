@@ -1,8 +1,8 @@
 import { BAUER_AUGEN, BAUER_UMRISS, LOGO_BEREICH, LOGO_FARBEN } from './logoDaten';
 
 describe('Logo-Daten', () => {
-  it('nutzt die Farben des Stils „Mitternacht“', () => {
-    expect(LOGO_FARBEN).toMatchObject({ akzent: '#6C8CFF', hintergrund: '#0C1224' });
+  it('nutzt die Farben des Stils „Graphit“', () => {
+    expect(LOGO_FARBEN).toMatchObject({ akzent: '#6C8CFF', hintergrund: '#0D0E11' });
   });
 
   it('hat einen Umriss aus vier Teilen und zwei Augen im Kopf', () => {
