@@ -4,6 +4,7 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle } from 'react-native-svg';
 
 import { FARBEN } from './farben';
 import { type Symbolname, Zeichen } from './symbole';
@@ -13,6 +14,9 @@ const SYMBOLE: Record<string, Symbolname> = {
   repertoire: 'repertoire',
   mehr: 'mehr',
 };
+
+/** Kantenlänge der Zeichenfläche für den Leuchtpunkt (Punkt mit weichem Schein). */
+const PUNKT = 14;
 
 /** Abstand zwischen Leiste und Systemknöpfen. */
 const ABSTAND_UNTEN = 10;
@@ -48,7 +52,15 @@ export function Reiterleiste({ state, descriptors, emitter, navigateToTab }: Bot
           >
             <Zeichen name={SYMBOLE[route.name] ?? 'mehr'} farbe={farbe} />
             <Text style={[stile.text, { color: farbe }, aktiv && stile.textAktiv]}>{titel}</Text>
-            <View style={[stile.leuchtpunkt, aktiv && stile.leuchtpunktAktiv]} />
+            {/* Als Kreis gezeichnet: Eine kleine Fläche mit Schatten wird auf manchen Geräten eckig. */}
+            <Svg width={PUNKT} height={PUNKT} style={stile.leuchtpunkt}>
+              {aktiv && (
+                <>
+                  <Circle cx={PUNKT / 2} cy={PUNKT / 2} r={6} fill={FARBEN.akzent} opacity={0.25} />
+                  <Circle cx={PUNKT / 2} cy={PUNKT / 2} r={2.6} fill={FARBEN.akzent} />
+                </>
+              )}
+            </Svg>
           </Pressable>
         );
       })}
@@ -68,12 +80,6 @@ const stile = StyleSheet.create({
   gedrueckt: { opacity: 0.6 },
   text: { fontSize: 12 },
   textAktiv: { fontWeight: '700' },
-  leuchtpunkt: { width: 5, height: 5, borderRadius: 2.5, marginTop: 1 },
-  leuchtpunktAktiv: {
-    backgroundColor: FARBEN.akzent,
-    shadowColor: FARBEN.akzent,
-    shadowOpacity: 0.9,
-    shadowRadius: 4,
-    elevation: 3,
-  },
+  // Der Schein ragt über die Zeile hinaus, ohne die Leiste höher zu machen.
+  leuchtpunkt: { marginTop: -3, marginBottom: -5 },
 });
