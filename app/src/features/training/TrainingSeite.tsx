@@ -16,12 +16,11 @@ import {
   tippNehmen,
 } from '@prepline/shared';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   Vibration,
   View,
@@ -30,11 +29,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
-import { Knopf, RundKnopf, Seitenpunkt, Verlauf, zurueck } from '@/ui/bausteine';
+import { Balken, Knopf, RundKnopf, Seitenpunkt, zurueck } from '@/ui/bausteine';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { type Feldmarkierung, Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
 import { Zeichen } from '@/ui/symbole';
+import { Text } from '@/ui/Text';
 
 import { WarumBlase } from './WarumBlase';
 
@@ -45,8 +45,9 @@ import {
   type Trainingsvorbereitung,
 } from './trainingDaten';
 
-// Trainingsbildschirm (Skizze Graphit, Serkan 12.11.2026): runder Schließen-Knopf, Fortschrittsbalken,
-// Brett fast randlos, darunter „Dein Zug“ und der Knopf für die Zugliste, unten Tipp und „Warum?“.
+// Trainingsbildschirm (Layout „Ruhig & groß“, Serkan 14.11.2026): runder Schließen-Knopf, Name und
+// „Zug x von y“, dünner Fortschrittsbalken, Brett mit Rand, darunter „Dein Zug“ groß und unten
+// eine Leiste mit drei gleich großen Knöpfen Tipp / Züge / Warum?.
 // Rückmeldungen grün/rot/gelb wie am 11.11. abgestimmt.
 
 type Anzeige =
@@ -214,30 +215,37 @@ export function TrainingSeite() {
     .map((s) => ({ schritt: s, text: erklaerungFuer(teil.rep.quelle, s.fen, s.san)?.de }))
     .find((w) => w.text);
 
+  const tippMoeglich =
+    eigenerSchritt &&
+    schritt.art !== 'neu' &&
+    !runde.nachspielen &&
+    !runde.tipp &&
+    anzeige?.art !== 'richtig';
+  const warumMoeglich = Boolean(warum) && !coachText;
+
   return (
     <SafeAreaView style={stile.seite}>
       <View style={stile.kopf}>
-        <View style={stile.kopfSeite}>
-          <RundKnopf symbol="kreuz" beschriftung="Training beenden" onPress={zurueck} />
+        <RundKnopf symbol="kreuz" beschriftung="Training beenden" onPress={zurueck} />
+        <View style={stile.kopfMitte}>
+          <Text style={stile.titel} numberOfLines={1}>
+            {teil.rep.name}
+          </Text>
+          <Text style={stile.zaehler} testID="fortschritt">
+            Zug {Math.min(erledigt + 1, gesamt)} von {gesamt}
+          </Text>
         </View>
-        <Text style={stile.titel} numberOfLines={1}>
-          {teil.rep.name}
-        </Text>
-        <Text style={[stile.kopfSeite, stile.zaehler]} testID="fortschritt">
-          {Math.min(erledigt + 1, gesamt)} / {gesamt}
-        </Text>
+        <View style={stile.kopfPlatz} />
       </View>
       <View style={stile.balken}>
-        <View style={[stile.balkenVoll, { width: `${Math.min(100, balken * 100)}%` }]}>
-          <Verlauf />
-        </View>
+        <Balken anteil={Math.min(1, balken)} hoehe={4} />
       </View>
 
       <ScrollView contentContainerStyle={stile.inhalt}>
         <View style={stile.brett}>
           <Schachbrett
             fen={anzeige?.art === 'richtig' ? anzeige.fen : schritt.fen}
-            groesse={breite - 24}
+            groesse={breite - 32}
             rundung={14}
             ansicht={teil.rep.seite}
             figurensatz={einstellungen.figurensatz}
@@ -255,22 +263,7 @@ export function TrainingSeite() {
           </View>
         )}
         <View style={[stile.statusZeile, phase && stile.statusZeileNah]}>
-          <View style={stile.statusText}>
-            <Meldung schritt={schritt} anzeige={anzeige} seite={teil.rep.seite} />
-          </View>
-          <Pressable
-            onPress={() => setZuegeOffen(!zuegeOffen)}
-            accessibilityRole="button"
-            accessibilityLabel={zuegeOffen ? 'Züge ausblenden' : 'Züge anzeigen'}
-            style={stile.zuegeKnopf}
-          >
-            <Text style={stile.zuegeKnopfText}>Züge</Text>
-            <Zeichen
-              name={zuegeOffen ? 'pfeilOben' : 'pfeilUnten'}
-              farbe={FARBEN.textLeise}
-              groesse={18}
-            />
-          </Pressable>
+          <Meldung schritt={schritt} anzeige={anzeige} seite={teil.rep.seite} />
         </View>
         {zuegeOffen && <Zugliste schritte={runde.linie.slice(0, runde.index)} />}
         {coachText && (
@@ -285,32 +278,28 @@ export function TrainingSeite() {
         {kommentar ? <Text style={stile.kommentar}>{kommentar}</Text> : null}
       </ScrollView>
 
+      {/* Bedienleiste am Daumen: Tipp, Zugliste und bei Eröffnungen aus der Sammlung „Warum?“. */}
       <View style={stile.unten}>
-        {eigenerSchritt && schritt.art !== 'neu' && !runde.nachspielen ? (
-          <Pressable
-            onPress={tipp}
-            disabled={runde.tipp || anzeige?.art === 'richtig'}
-            accessibilityRole="button"
-            style={[stile.unterKnopf, stile.tipp, runde.tipp && { opacity: 0.4 }]}
-          >
-            <Zeichen name="birne" farbe={FARBEN.text} />
-            <Text style={stile.tippText}>Tipp</Text>
-          </Pressable>
-        ) : (
-          <View style={stile.platz} />
-        )}
-        {warum && !coachText ? (
-          <Pressable
+        <Aktion titel="Tipp" aus={!tippMoeglich} onPress={tipp}>
+          <Zeichen name="birne" farbe={FARBEN.text} groesse={22} />
+        </Aktion>
+        <Aktion
+          titel="Züge"
+          aktiv={zuegeOffen}
+          beschriftung={zuegeOffen ? 'Züge ausblenden' : 'Züge anzeigen'}
+          onPress={() => setZuegeOffen(!zuegeOffen)}
+        >
+          <Zeichen name="liste" farbe={zuegeOffen ? FARBEN.akzent : FARBEN.text} groesse={22} />
+        </Aktion>
+        {teil.rep.quelle && (
+          <Aktion
+            titel="Warum?"
+            aus={!warumMoeglich}
+            beschriftung={warum ? `Warum ${zugText(warum.schritt)}?` : 'Warum?'}
             onPress={() => setWarumOffen(true)}
-            accessibilityRole="button"
-            accessibilityLabel={`Warum ${zugText(warum.schritt)}?`}
-            style={[stile.unterKnopf, stile.warum]}
           >
-            <CoachBauer groesse={28} />
-            <Text style={stile.warumText}>Warum?</Text>
-          </Pressable>
-        ) : (
-          <View style={stile.platz} />
+            <CoachBauer groesse={26} />
+          </Aktion>
         )}
       </View>
       {warum?.text && (
@@ -322,6 +311,42 @@ export function TrainingSeite() {
         />
       )}
     </SafeAreaView>
+  );
+}
+
+/** Gleich große Kachel in der Bedienleiste unten: Symbol über der Beschriftung. */
+function Aktion({
+  titel,
+  beschriftung,
+  aus = false,
+  aktiv = false,
+  onPress,
+  children,
+}: {
+  titel: string;
+  beschriftung?: string;
+  aus?: boolean;
+  aktiv?: boolean;
+  onPress: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={aus}
+      accessibilityRole="button"
+      accessibilityLabel={beschriftung ?? titel}
+      accessibilityState={{ disabled: aus, expanded: aktiv }}
+      style={({ pressed }) => [
+        stile.aktion,
+        aktiv && stile.aktionAktiv,
+        aus && { opacity: 0.35 },
+        pressed && { opacity: 0.75 },
+      ]}
+    >
+      {children}
+      <Text style={[stile.aktionText, aktiv && { color: FARBEN.akzent }]}>{titel}</Text>
+    </Pressable>
   );
 }
 
@@ -486,25 +511,13 @@ function FertigAnsicht({ geuebt, fehler }: { geuebt: number; fehler: number }) {
 const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund, paddingBottom: 16 },
   kopf: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 },
-  kopfSeite: { width: 64 },
-  titel: { flex: 1, textAlign: 'center', color: FARBEN.text, fontSize: 18, fontWeight: '700' },
-  zaehler: { color: FARBEN.textLeise, fontSize: 15, fontWeight: '700', textAlign: 'right' },
-  balken: {
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: FARBEN.karteHell,
-    marginHorizontal: 16,
-    marginTop: 14,
-    overflow: 'hidden',
-  },
-  balkenVoll: {
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: FARBEN.akzent,
-    overflow: 'hidden',
-  },
+  kopfMitte: { flex: 1, alignItems: 'center', gap: 2, paddingHorizontal: 8 },
+  kopfPlatz: { width: 40 },
+  titel: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
+  zaehler: { color: FARBEN.textLeise, fontSize: 13, fontWeight: '500' },
+  balken: { marginHorizontal: 20, marginTop: 16 },
   inhalt: { paddingBottom: 16 },
-  brett: { marginHorizontal: 12, marginTop: 22 },
+  brett: { marginHorizontal: 16, marginTop: 18 },
   phase: {
     alignSelf: 'flex-start',
     marginHorizontal: 20,
@@ -538,20 +551,6 @@ const stile = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 22,
   },
-  statusText: { flex: 1 },
-  zuegeKnopf: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingLeft: 16,
-    paddingRight: 12,
-    paddingVertical: 9,
-    borderRadius: 20,
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.linie,
-    borderWidth: 1,
-  },
-  zuegeKnopfText: { color: FARBEN.text, fontSize: 14, fontWeight: '700' },
   zugliste: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginHorizontal: 20, marginTop: 14 },
   zuglisteLeer: { color: FARBEN.textLeise, fontSize: 14, marginHorizontal: 20, marginTop: 14 },
   zugPille: {
@@ -564,7 +563,7 @@ const stile = StyleSheet.create({
   meldung: { gap: 4 },
   rueckmeldung: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   titelZeile: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  meldungTitelGross: { color: FARBEN.text, fontSize: 28, fontWeight: '700' },
+  meldungTitelGross: { color: FARBEN.text, fontSize: 30, fontWeight: '700', letterSpacing: -0.6 },
   rueckmeldungText: { flex: 1, gap: 2 },
   kreis: {
     width: 32,
@@ -587,31 +586,20 @@ const stile = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  unten: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    paddingHorizontal: 16,
-    minHeight: 58,
-  },
-  platz: { flex: 1 },
-  unterKnopf: {
+  unten: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 8 },
+  aktion: {
     flex: 1,
-    height: 58,
-    borderRadius: 29,
-    flexDirection: 'row',
+    height: 72,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 6,
+    backgroundColor: FARBEN.karte,
+    borderColor: FARBEN.rand,
+    borderWidth: 1,
   },
-  warum: {
-    backgroundColor: FARBEN.akzentFlaeche,
-    borderColor: FARBEN.akzentRand,
-    borderWidth: 1.5,
-  },
-  warumText: { color: FARBEN.akzent, fontSize: 17, fontWeight: '700' },
-  tipp: { backgroundColor: FARBEN.karteHell },
-  tippText: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
+  aktionAktiv: { backgroundColor: FARBEN.akzentFlaeche, borderColor: FARBEN.akzentRand },
+  aktionText: { color: FARBEN.text, fontSize: 13, fontWeight: '700' },
   fertig: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   fertigKreis: {
     width: 108,

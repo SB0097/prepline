@@ -1,7 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
@@ -15,6 +15,7 @@ import {
 import { Knopf, RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
 import { BestaetigenDialog } from '@/ui/Dialog';
 import { FARBEN } from '@/ui/farben';
+import { Text } from '@/ui/Text';
 
 // Sicherung (Skizze M8, Serkan 11.11.2026): speichern/teilen, laden (ersetzt alles), PGN-Export.
 const GRUND_TEXT = {

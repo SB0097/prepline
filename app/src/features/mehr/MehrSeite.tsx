@@ -1,7 +1,7 @@
 import { HAEPPCHEN_BEREICH, NEU_PRO_TAG_BEREICH } from '@prepline/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
@@ -20,6 +20,7 @@ import { Abschnitt, RUNDUNG, SeitenTitel } from '@/ui/bausteine';
 import { FIGURENSAETZE, type Figurensatz } from '@/ui/brett/figuren';
 import { FIGUREN_SVG } from '@/ui/brett/figurenSvg';
 import { FARBEN } from '@/ui/farben';
+import { Text } from '@/ui/Text';
 
 // Mehr-Seite (Skizze M2, 11.11.2026): Figuren als Vorschau-Kacheln, darunter die Trainings-Einstellungen,
 // dann Daten (Sicherung) und Info (Über Prepline, Datenschutz) aus Skizze M8.

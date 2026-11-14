@@ -1,8 +1,9 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
+import { Text } from '@/ui/Text';
 
 /** Platz für die Knopfreihe des Trainings, damit der Bauer nicht darüber liegt. */
 const ABSTAND_UNTEN = 96;

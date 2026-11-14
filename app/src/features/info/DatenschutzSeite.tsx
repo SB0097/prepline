@@ -1,9 +1,10 @@
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
+import { Text } from '@/ui/Text';
 
 // Datenschutz in der App (Skizze M8, Serkan 11.11.2026). Die vollständige Erklärung liegt
 // öffentlich auf GitHub Pages (docs/datenschutz.html), wie es Google Play verlangt.

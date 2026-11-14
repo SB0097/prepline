@@ -1,5 +1,5 @@
 import { lizenzFinden } from './LizenzSeite';
-import { FIGUREN_LIZENZEN, LIZENZTEXTE, PAKETE } from './lizenzenDaten';
+import { FIGUREN_LIZENZEN, LIZENZTEXTE, PAKETE, SCHRIFT_LIZENZ } from './lizenzenDaten';
 
 describe('Lizenzen', () => {
   it('enthält die wichtigsten Bibliotheken mit Lizenztext', () => {
@@ -26,5 +26,10 @@ describe('Lizenzen', () => {
     expect(lizenzFinden(undefined, '0')?.text).toContain('Colin M.L. Burnett');
     expect(lizenzFinden('chess.js', undefined)?.lizenz).toBe('BSD-2-Clause');
     expect(lizenzFinden('gibt-es-nicht', undefined)).toBeNull();
+  });
+
+  it('nennt die Schrift Inter mit OFL-Lizenztext', () => {
+    expect(SCHRIFT_LIZENZ[0]).toBe('Inter');
+    expect(lizenzFinden(undefined, undefined, '1')?.text).toContain('SIL Open Font License');
   });
 });

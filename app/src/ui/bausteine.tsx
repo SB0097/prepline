@@ -1,11 +1,13 @@
-// Wiederkehrende Bausteine im Stil „Graphit“: Knöpfe, Umschalter, Seitenköpfe.
+// Wiederkehrende Bausteine im Stil „Graphit“, Layout „Ruhig & groß“ (Serkan 14.11.2026):
+// Knöpfe, Umschalter, Seitenköpfe mit großem Titel, Fortschrittsbalken.
 import { router } from 'expo-router';
 import { type ReactNode, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { FARBEN } from './farben';
 import { type Symbolname, Zeichen } from './symbole';
+import { Text } from './Text';
 
 export const RUNDUNG = 22;
 
@@ -127,10 +129,41 @@ export function RundKnopf({
       {art === 'akzent' && <Verlauf schraeg />}
       <Zeichen
         name={symbol}
-        farbe={art === 'akzent' ? FARBEN.textAufAkzent : FARBEN.textLeise}
+        farbe={art === 'akzent' ? FARBEN.textAufAkzent : FARBEN.text}
         groesse={art === 'akzent' ? 22 : 20}
       />
     </Pressable>
+  );
+}
+
+/** Fortschrittsbalken; der gefüllte Teil zeigt den Akzent-Verlauf. */
+export function Balken({
+  anteil,
+  hoehe = 6,
+  farbe,
+}: {
+  anteil: number;
+  hoehe?: number;
+  /** Feste Farbe statt Verlauf, z. B. Grün für „alles gut“. */
+  farbe?: string;
+}) {
+  const teil = Math.max(0, Math.min(1, anteil));
+  const rund = { height: hoehe, borderRadius: hoehe / 2 };
+  return (
+    <View style={[stile.balken, rund]}>
+      {teil > 0 && (
+        <View
+          style={[
+            stile.balkenVoll,
+            rund,
+            { width: `${teil * 100}%` },
+            farbe ? { backgroundColor: farbe } : null,
+          ]}
+        >
+          {!farbe && <Verlauf />}
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -223,23 +256,31 @@ export function SeitenTitel({
   );
 }
 
-/** Kopf für Unterseiten: Zurück-Pfeil und Titel in der Mitte. */
-export function ZurueckKopf({ titel }: { titel: string }) {
+/**
+ * Kopf für Unterseiten: oben ein runder Zurück-Knopf (rechts optional ein weiterer Knopf),
+ * darunter der Titel groß und linksbündig, optional mit einer leisen Zeile darunter.
+ */
+export function ZurueckKopf({
+  titel,
+  unter,
+  rechts,
+}: {
+  titel: string;
+  unter?: string | undefined;
+  rechts?: ReactNode;
+}) {
   return (
-    <View style={stile.zurueckZeile}>
-      <Pressable
-        onPress={zurueck}
-        hitSlop={16}
-        accessibilityRole="button"
-        accessibilityLabel="Zurück"
-        style={stile.zurueckKnopf}
-      >
-        <Text style={stile.zurueckPfeil}>‹</Text>
-      </Pressable>
-      <Text style={stile.zurueckTitel} accessibilityRole="header">
-        {titel}
-      </Text>
-      <View style={stile.zurueckKnopf} />
+    <View style={stile.unterKopf}>
+      <View style={stile.unterLeiste}>
+        <RundKnopf symbol="zurueck" beschriftung="Zurück" onPress={zurueck} />
+        {rechts}
+      </View>
+      {titel ? (
+        <Text style={stile.unterTitel} numberOfLines={2} accessibilityRole="header">
+          {titel}
+        </Text>
+      ) : null}
+      {unter ? <Text style={stile.unterZeile}>{unter}</Text> : null}
     </View>
   );
 }
@@ -288,7 +329,16 @@ const stile = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: FARBEN.akzent,
   },
-  rundLeise: { width: 40, height: 40, borderRadius: 20, backgroundColor: FARBEN.karte },
+  rundLeise: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: FARBEN.karte,
+    borderWidth: 1,
+    borderColor: FARBEN.rand,
+  },
+  balken: { backgroundColor: FARBEN.karteHell, overflow: 'hidden' },
+  balkenVoll: { backgroundColor: FARBEN.akzent, overflow: 'hidden' },
   umschalter: {
     flexDirection: 'row',
     backgroundColor: FARBEN.karte,
@@ -317,18 +367,17 @@ const stile = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 18,
   },
-  titelOben: { color: FARBEN.textLeise, fontSize: 14, fontWeight: '600', marginBottom: 2 },
-  titel: { color: FARBEN.text, fontSize: 32, fontWeight: '700' },
-  zurueckZeile: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  zurueckKnopf: { width: 40 },
-  zurueckPfeil: { color: FARBEN.textLeise, fontSize: 32, lineHeight: 34 },
-  zurueckTitel: {
-    flex: 1,
-    textAlign: 'center',
-    color: FARBEN.text,
-    fontSize: 17,
-    fontWeight: '700',
+  titelOben: { color: FARBEN.textLeise, fontSize: 14, fontWeight: '500', marginBottom: 2 },
+  titel: { color: FARBEN.text, fontSize: 34, fontWeight: '700', letterSpacing: -0.8 },
+  unterKopf: { paddingTop: 10, paddingBottom: 14 },
+  unterLeiste: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
   },
+  unterTitel: { color: FARBEN.text, fontSize: 30, fontWeight: '700', letterSpacing: -0.6 },
+  unterZeile: { color: FARBEN.textLeise, fontSize: 14, marginTop: 4 },
   abschnitt: {
     color: FARBEN.textLeise,
     fontSize: 12,

@@ -1,7 +1,8 @@
 import type { Stufe } from '@prepline/shared';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { STUFE_FARBE, STUFE_TEXT } from '@/ui/stufen';
+import { Text } from '@/ui/Text';
 
 /** Kleines farbiges Etikett: Einsteiger (grün), Fortgeschritten (gelb), Profi (rot). */
 export function Stufenetikett({ stufe }: { stufe: Stufe }) {

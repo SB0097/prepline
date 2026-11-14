@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -7,6 +7,7 @@ import { einstellungenLaden } from '@/daten/einstellungen';
 import { useGeladen } from '@/daten/useGeladen';
 import { Knopf } from '@/ui/bausteine';
 import { FARBEN } from '@/ui/farben';
+import { Text } from '@/ui/Text';
 
 import { entwurfSetzen } from './entwurf';
 

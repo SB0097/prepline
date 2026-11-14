@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, StyleSheet, TextInput } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Knopf, RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
 import { FARBEN } from '@/ui/farben';
+import { TextInput } from '@/ui/Text';
 
 import { entwurfSetzen } from './entwurf';
 
