@@ -16,7 +16,7 @@ import { einstellungLesen } from '@/daten/speicher';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
 import { APP_VERSION, Zeile } from '@/features/info/UeberSeite';
-import { Abschnitt, RUNDUNG, SeitenTitel } from '@/ui/bausteine';
+import { Abschnitt, Federnd, RUNDUNG, SeitenTitel } from '@/ui/bausteine';
 import { FIGURENSAETZE, type Figurensatz } from '@/ui/brett/figuren';
 import { FIGUREN_SVG } from '@/ui/brett/figurenSvg';
 import { FARBEN } from '@/ui/farben';
@@ -123,7 +123,7 @@ function FigurenKachel({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <Federnd
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ selected: aktiv }}
@@ -139,7 +139,7 @@ function FigurenKachel({
         </View>
       </View>
       <Text style={[stile.figurName, aktiv && stile.figurNameAktiv]}>{NAMEN[satz]}</Text>
-    </Pressable>
+    </Federnd>
   );
 }
 
