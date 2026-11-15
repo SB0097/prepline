@@ -12,7 +12,10 @@ export type Symbolname =
   | 'plus'
   | 'kreuz'
   | 'pfeilUnten'
-  | 'pfeilOben';
+  | 'pfeilOben'
+  | 'zurueck'
+  | 'weiter'
+  | 'liste';
 
 /** Symbole aus einer einzelnen Linie. */
 const LINIEN: Partial<Record<Symbolname, string>> = {
@@ -21,6 +24,9 @@ const LINIEN: Partial<Record<Symbolname, string>> = {
   kreuz: 'M6 6l12 12M18 6L6 18',
   pfeilUnten: 'M6 9l6 6l6-6',
   pfeilOben: 'M6 15l6-6l6 6',
+  zurueck: 'M14.5 5.5L8 12l6.5 6.5',
+  weiter: 'M9.5 5.5L16 12l-6.5 6.5',
+  liste: 'M9 6.5h11M9 12h11M9 17.5h11M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01',
 };
 
 export function Zeichen({

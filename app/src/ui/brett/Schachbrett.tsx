@@ -12,10 +12,11 @@ import {
   zugAusFeldern,
 } from '@prepline/shared';
 import { useRef, useState } from 'react';
-import { Animated, type GestureResponderEvent, StyleSheet, Text, View } from 'react-native';
+import { Animated, type GestureResponderEvent, StyleSheet, View } from 'react-native';
 import Svg, { Line, Polygon, SvgXml } from 'react-native-svg';
 
 import { FARBEN } from '@/ui/farben';
+import { Text } from '../Text';
 
 import { type Figurensatz, type FigurName, FIGURENSATZ_STANDARD } from './figuren';
 import { FIGUREN_SVG } from './figurenSvg';

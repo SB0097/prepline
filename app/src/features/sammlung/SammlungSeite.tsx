@@ -10,7 +10,7 @@ import {
 } from '@prepline/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -23,6 +23,7 @@ import type { Figurensatz } from '@/ui/brett/figuren';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
 import { STUFE_TEXT } from '@/ui/stufen';
+import { Text } from '@/ui/Text';
 
 import { Stufenetikett } from './Stufenetikett';
 

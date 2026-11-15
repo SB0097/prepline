@@ -1,13 +1,15 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Abschnitt, RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
+import { Zeichen } from '@/ui/symbole';
+import { Text } from '@/ui/Text';
 
-import { FIGUREN_LIZENZEN, PAKETE } from './lizenzenDaten';
+import { FIGUREN_LIZENZEN, PAKETE, SCHRIFT_LIZENZ } from './lizenzenDaten';
 
 // Über Prepline (Skizze M8, Serkan 11.11.2026): Version, verwendete Figuren und Bibliotheken.
 // Antippen zeigt den vollständigen Lizenztext.
@@ -46,6 +48,16 @@ export function UeberSeite() {
               }
             />
           ))}
+        </View>
+
+        <Abschnitt titel="Schrift" />
+        <View style={stile.gruppe}>
+          <Zeile
+            titel={SCHRIFT_LIZENZ[0]}
+            rechts={SCHRIFT_LIZENZ[1]}
+            erste
+            onPress={() => router.push({ pathname: '/ueber/lizenz', params: { schrift: '1' } })}
+          />
         </View>
 
         <Abschnitt titel="Verwendet" />
@@ -92,7 +104,7 @@ export function Zeile({
         {titel}
       </Text>
       {rechts ? <Text style={stile.rechts}>{rechts}</Text> : null}
-      <Text style={stile.pfeil}>›</Text>
+      <Zeichen name="weiter" farbe={FARBEN.textLeise} groesse={16} />
     </Pressable>
   );
 }
@@ -110,6 +122,5 @@ const stile = StyleSheet.create({
   trenner: { borderTopWidth: 1, borderTopColor: FARBEN.linie },
   zeilenText: { flex: 1, color: FARBEN.text, fontSize: 15 },
   rechts: { color: FARBEN.textLeise, fontSize: 12 },
-  pfeil: { color: FARBEN.textLeise, fontSize: 18 },
   hinweis: { color: FARBEN.textLeise, fontSize: 12, textAlign: 'center', marginTop: 14 },
 });

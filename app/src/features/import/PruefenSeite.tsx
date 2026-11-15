@@ -1,7 +1,7 @@
 import { hauptlinieEnde, importVorschau, type Seite } from '@prepline/shared';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
@@ -11,6 +11,7 @@ import { Knopf, RUNDUNG, Umschalter, ZurueckKopf } from '@/ui/bausteine';
 import { type Figurensatz, FIGURENSATZ_STANDARD } from '@/ui/brett/figuren';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
+import { Text, TextInput } from '@/ui/Text';
 
 import { entwurfHolen } from './entwurf';
 import { fehlerText, nameAusDatei } from './fehlerText';

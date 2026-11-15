@@ -1,7 +1,8 @@
 // Dialoge im Stil „Mitternacht“: Rückfrage (z. B. vor dem Löschen), Texteingabe und ein kleines Menü.
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text, TextInput } from './Text';
 
 import { FARBEN } from './farben';
 

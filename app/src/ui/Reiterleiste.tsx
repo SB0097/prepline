@@ -2,9 +2,10 @@
 // Eigene Umsetzung statt der Standardleiste: kein grauer Android-Kreis beim Antippen
 // und genug Abstand zu den Systemknöpfen.
 import type { BottomTabBarProps } from 'expo-router/tabs';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
+import { Text } from './Text';
 
 import { FARBEN } from './farben';
 import { type Symbolname, Zeichen } from './symbole';

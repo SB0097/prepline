@@ -8,7 +8,7 @@ import {
 } from '@prepline/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
@@ -20,6 +20,7 @@ import { Abschnitt, Knopf, ZurueckKopf } from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
+import { Text } from '@/ui/Text';
 
 import { Stufenetikett } from './Stufenetikett';
 

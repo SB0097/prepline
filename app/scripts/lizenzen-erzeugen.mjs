@@ -142,6 +142,9 @@ const figuren = [
   ['Verspielt – RhosGFX', 'CC0-1.0', 'Gemeinfrei (CC0 1.0), keine Bedingungen.'],
 ];
 
+// Schrift Inter: Lizenztext aus assets/schrift
+const schrift = ['Inter', 'OFL-1.1', lesen(join(app, 'assets', 'schrift', 'OFL.txt')).trim()];
+
 writeFileSync(
   ZIEL,
   '// Automatisch erzeugt mit `npm run lizenzen -w app` – nicht von Hand ändern.\n\n' +
@@ -149,7 +152,9 @@ writeFileSync(
     `export const PAKETE: readonly (readonly [string, string, string, number])[] = ${JSON.stringify(eintraege)};\n\n` +
     `export const LIZENZTEXTE: readonly string[] = ${JSON.stringify(texte)};\n\n` +
     '/** [Titel, Lizenz, Text] */\n' +
-    `export const FIGUREN_LIZENZEN: readonly (readonly [string, string, string])[] = ${JSON.stringify(figuren)};\n`,
+    `export const FIGUREN_LIZENZEN: readonly (readonly [string, string, string])[] = ${JSON.stringify(figuren)};\n\n` +
+    '/** [Titel, Lizenz, Text] */\n' +
+    `export const SCHRIFT_LIZENZ: readonly [string, string, string] = ${JSON.stringify(schrift)};\n`,
 );
 const ohneText = pakete.filter((p) => !p.text).map((p) => `${p.name} (${p.lizenz})`);
 console.log(`✓ ${pakete.length} Pakete → src/features/info/lizenzenDaten.ts`);

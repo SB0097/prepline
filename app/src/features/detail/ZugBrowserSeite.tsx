@@ -7,19 +7,22 @@ import {
 } from '@prepline/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { einstellungenLaden } from '@/daten/einstellungen';
 import { repertoireDetail } from '@/daten/speicher';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
-import { Knopf, zurueck } from '@/ui/bausteine';
+import { Knopf, RundKnopf, zurueck } from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
+import { Zeichen } from '@/ui/symbole';
+import { Text } from '@/ui/Text';
 
-// Zug-Browser (Skizze D2, Serkan 11.11.2026): eine Linie Zug für Zug ansehen.
+// Zug-Browser (Skizze D2, Serkan 11.11.2026; Layout „Ruhig & groß“ 14.11.2026):
+// eine Linie Zug für Zug ansehen.
 // Startet kurz vor der Stelle, an der die gewählte Linie abzweigt.
 export function ZugBrowserSeite() {
   const { id, linie } = useLocalSearchParams<{ id: string; linie?: string }>();
@@ -56,25 +59,21 @@ export function ZugBrowserSeite() {
   return (
     <SafeAreaView style={stile.seite}>
       <View style={stile.kopf}>
-        <Pressable
-          onPress={zurueck}
-          hitSlop={16}
-          accessibilityRole="button"
-          accessibilityLabel="Zurück"
-          style={stile.kopfSeite}
-        >
-          <Text style={stile.zurueck}>‹</Text>
-        </Pressable>
-        <Text style={stile.titel} numberOfLines={1} accessibilityRole="header">
-          {rep.name}
-        </Text>
-        <View style={stile.kopfSeite} />
+        <RundKnopf symbol="zurueck" beschriftung="Zurück" onPress={zurueck} />
+        <View style={stile.kopfMitte}>
+          <Text style={stile.titel} numberOfLines={1} accessibilityRole="header">
+            {rep.name}
+          </Text>
+          <Text style={stile.unterTitel}>Züge ansehen</Text>
+        </View>
+        <View style={stile.kopfPlatz} />
       </View>
       <ScrollView contentContainerStyle={stile.inhalt}>
         <View style={stile.brett}>
           <Schachbrett
             fen={fen}
-            groesse={breite - 20}
+            groesse={breite - 32}
+            rundung={14}
             ansicht={rep.seite}
             figurensatz={figurensatz}
             {...(letzter && { letzterZug: letzter.uci })}
@@ -129,7 +128,8 @@ export function ZugBrowserSeite() {
             accessibilityRole="button"
             style={[stile.navKnopf, pfad.length === 0 && stile.aus]}
           >
-            <Text style={stile.navText}>‹ zurück</Text>
+            <Zeichen name="zurueck" farbe={FARBEN.text} groesse={20} />
+            <Text style={stile.navText}>zurück</Text>
           </Pressable>
           <Pressable
             onPress={() => naechster && setPfad([...pfad, naechster])}
@@ -137,12 +137,14 @@ export function ZugBrowserSeite() {
             accessibilityRole="button"
             style={[stile.navKnopf, !naechster && stile.aus]}
           >
-            <Text style={stile.navText}>weiter ›</Text>
+            <Text style={stile.navText}>weiter</Text>
+            <Zeichen name="weiter" farbe={FARBEN.text} groesse={20} />
           </Pressable>
         </View>
         <View style={stile.unten}>
           <Knopf
             titel="Nur diese trainieren"
+            symbol="start"
             aus={rep.fortschritt.faellig + rep.fortschritt.neu === 0}
             onPress={() => router.push({ pathname: '/training', params: { id: String(rep.id) } })}
           />
@@ -154,12 +156,13 @@ export function ZugBrowserSeite() {
 
 const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
-  kopf: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
-  kopfSeite: { width: 48 },
-  zurueck: { color: FARBEN.textLeise, fontSize: 32, lineHeight: 34 },
-  titel: { flex: 1, textAlign: 'center', color: FARBEN.text, fontSize: 17, fontWeight: '700' },
+  kopf: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
+  kopfMitte: { flex: 1, alignItems: 'center', gap: 2, paddingHorizontal: 8 },
+  kopfPlatz: { width: 40 },
+  titel: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
+  unterTitel: { color: FARBEN.textLeise, fontSize: 13, fontWeight: '500' },
   inhalt: { paddingBottom: 16 },
-  brett: { marginHorizontal: 10 },
+  brett: { marginHorizontal: 16, marginTop: 10 },
   zugfolge: {
     color: FARBEN.textLeise,
     fontSize: 14,
@@ -193,9 +196,9 @@ const stile = StyleSheet.create({
   coachErklaerung: { color: FARBEN.text, fontSize: 14, lineHeight: 20 },
   abschnitt: {
     color: FARBEN.textLeise,
-    fontSize: 13,
+    fontSize: 11.5,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
     marginHorizontal: 20,
     marginTop: 20,
     marginBottom: 10,
@@ -203,6 +206,8 @@ const stile = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 20 },
   chip: {
     backgroundColor: FARBEN.karte,
+    borderColor: FARBEN.rand,
+    borderWidth: 1,
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 9,
@@ -210,20 +215,21 @@ const stile = StyleSheet.create({
   chipAktiv: { backgroundColor: FARBEN.akzent },
   chipText: { color: FARBEN.text, fontSize: 15 },
   chipTextAktiv: { color: FARBEN.textAufAkzent, fontWeight: '700' },
-  fuss: {
-    paddingBottom: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: FARBEN.linie,
-  },
-  navigation: { flexDirection: 'row', gap: 12, marginHorizontal: 20, marginTop: 12 },
+  fuss: { paddingBottom: 12 },
+  navigation: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 8 },
   navKnopf: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: FARBEN.karte,
-    borderRadius: 20,
-    paddingVertical: 13,
+    borderColor: FARBEN.rand,
+    borderWidth: 1,
+    borderRadius: 22,
+    height: 56,
   },
-  navText: { color: FARBEN.text, fontSize: 17 },
+  navText: { color: FARBEN.text, fontSize: 16, fontWeight: '600' },
   aus: { opacity: 0.4 },
-  unten: { marginHorizontal: 20, marginTop: 12 },
+  unten: { marginHorizontal: 16, marginTop: 10 },
 });

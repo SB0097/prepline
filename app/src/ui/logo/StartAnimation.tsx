@@ -8,6 +8,7 @@ import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from 'react-nat
 import Svg from 'react-native-svg';
 
 import { BauerTeile } from '@/ui/CoachBauer';
+import { SCHRIFT } from '@/ui/Text';
 
 import { LOGO_FARBEN } from './logoDaten';
 
@@ -103,5 +104,11 @@ const stile = StyleSheet.create({
   },
   bauer: { width: BREITE, height: HOEHE, justifyContent: 'flex-end' },
   unten: { overflow: 'hidden', justifyContent: 'flex-end' },
-  schrift: { color: LOGO_FARBEN.hell, fontSize: 30, fontWeight: '700', letterSpacing: 0.5 },
+  schrift: {
+    color: LOGO_FARBEN.hell,
+    fontFamily: SCHRIFT,
+    fontSize: 30,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
 });
