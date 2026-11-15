@@ -32,7 +32,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
-import { Balken, Federnd, Knopf, RundKnopf, Seitenpunkt, zurueck } from '@/ui/bausteine';
+import {
+  Balken,
+  Federnd,
+  KARTE,
+  Knopf,
+  RundKnopf,
+  Seitenpunkt,
+  TIEFE,
+  zurueck,
+} from '@/ui/bausteine';
 import { DAUER, erscheinen, GLEITEN } from '@/ui/bewegung';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { type Feldmarkierung, Schachbrett } from '@/ui/brett/Schachbrett';
@@ -40,7 +49,7 @@ import { FARBEN } from '@/ui/farben';
 import { Zeichen } from '@/ui/symbole';
 import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
-import { brettGroesse } from './brettGroesse';
+import { brettGroesse, RAHMEN } from './brettGroesse';
 import { WarumBlase } from './WarumBlase';
 
 import {
@@ -317,11 +326,12 @@ export function TrainingSeite() {
       </ScrollView>
 
       {/* Bedienleiste am Daumen: Tipp, Zugliste und bei Eröffnungen aus der Sammlung „Warum?“. */}
-      <View style={stile.unten}>
+      <View style={[KARTE, stile.unten]}>
         <Aktion titel="Tipp" aus={!tippMoeglich} onPress={tipp}>
           <Zeichen name="birne" farbe={FARBEN.text} groesse={22} />
         </Aktion>
         <Aktion
+          trenner
           titel="Züge"
           aktiv={zuegeOffen}
           beschriftung={zuegeOffen ? 'Züge ausblenden' : 'Züge anzeigen'}
@@ -331,6 +341,7 @@ export function TrainingSeite() {
         </Aktion>
         {teil.rep.quelle && (
           <Aktion
+            trenner
             titel="Warum?"
             aus={!warumMoeglich}
             beschriftung={warum ? `Warum ${zugText(warum.schritt)}?` : 'Warum?'}
@@ -358,6 +369,7 @@ function Aktion({
   beschriftung,
   aus = false,
   aktiv = false,
+  trenner = false,
   onPress,
   children,
 }: {
@@ -365,6 +377,8 @@ function Aktion({
   beschriftung?: string;
   aus?: boolean;
   aktiv?: boolean;
+  /** Feine Linie links als Abgrenzung zum vorigen Knopf in der Leiste. */
+  trenner?: boolean;
   onPress: () => void;
   children: ReactNode;
 }) {
@@ -375,8 +389,9 @@ function Aktion({
       accessibilityRole="button"
       accessibilityLabel={beschriftung ?? titel}
       accessibilityState={{ disabled: aus, expanded: aktiv }}
-      style={[stile.aktion, aktiv && stile.aktionAktiv, aus && { opacity: 0.35 }]}
+      style={[stile.aktion, trenner && stile.aktionTrenner, aus && { opacity: 0.35 }]}
     >
+      {aktiv && <View style={stile.aktionAktiv} />}
       {children}
       <Text style={[stile.aktionText, aktiv && { color: FARBEN.akzent }]}>{titel}</Text>
     </Federnd>
@@ -599,7 +614,17 @@ const stile = StyleSheet.create({
   zaehler: { color: FARBEN.textLeise, fontSize: 13, fontWeight: '500' },
   balken: { marginHorizontal: 20, marginTop: 16 },
   inhalt: { paddingBottom: 16 },
-  brett: { alignSelf: 'center', marginTop: 18 },
+  // Brett in einem erhöhten Rahmen (Runde 16 „Tiefe“).
+  brett: {
+    alignSelf: 'center',
+    marginTop: 16,
+    padding: RAHMEN,
+    borderRadius: 20,
+    backgroundColor: FARBEN.karteHell,
+    borderWidth: 1,
+    borderColor: FARBEN.lichtkante,
+    ...TIEFE,
+  },
   phase: {
     alignSelf: 'flex-start',
     marginHorizontal: 20,
@@ -668,19 +693,23 @@ const stile = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  unten: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 8 },
-  aktion: {
-    flex: 1,
-    height: 72,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.rand,
-    borderWidth: 1,
+  // Bedienleiste als eine Fläche mit feinen Trennlinien (Runde 16).
+  unten: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
+    borderRadius: 24,
+    paddingVertical: 4,
   },
-  aktionAktiv: { backgroundColor: FARBEN.akzentFlaeche, borderColor: FARBEN.akzentRand },
+  aktion: { flex: 1, height: 64, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  aktionTrenner: { borderLeftWidth: 1, borderLeftColor: FARBEN.rand },
+  aktionAktiv: {
+    ...StyleSheet.absoluteFill,
+    marginHorizontal: 6,
+    borderRadius: 18,
+    backgroundColor: FARBEN.akzentFlaeche,
+  },
   aktionText: { color: FARBEN.text, fontSize: 13, fontWeight: '700' },
   fertig: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   fertigKreis: {

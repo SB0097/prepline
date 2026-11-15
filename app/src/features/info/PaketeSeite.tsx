@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
+import { RUNDUNG, TIEFE, ZurueckKopf } from '@/ui/bausteine';
 import { FARBEN } from '@/ui/farben';
 
 import { PAKETE } from './lizenzenDaten';
@@ -44,7 +44,7 @@ const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
   rand: { paddingHorizontal: 20 },
   liste: { paddingHorizontal: 20, paddingBottom: 32 },
-  karte: { backgroundColor: FARBEN.karte, paddingHorizontal: 18, overflow: 'hidden' },
+  karte: { backgroundColor: FARBEN.karte, ...TIEFE, paddingHorizontal: 18, overflow: 'hidden' },
   oben: { borderTopLeftRadius: RUNDUNG, borderTopRightRadius: RUNDUNG },
   unten: { borderBottomLeftRadius: RUNDUNG, borderBottomRightRadius: RUNDUNG },
 });

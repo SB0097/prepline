@@ -1,4 +1,5 @@
-// Zahlen für die Seite „Heute“: Was ist heute dran, wie sicher sitzen Weiß und Schwarz.
+// Zahlen für die Seite „Heute“: Was ist heute dran, wie weit sind Weiß und Schwarz,
+// an welchen Tagen dieser Woche wurde geübt.
 import type { Seite } from '@prepline/shared';
 
 import { einstellungenLaden } from '@/daten/einstellungen';
@@ -26,13 +27,39 @@ export type HeuteDaten = {
   serie: number;
   weiter: WeiterMit | null;
   figurensatz: Figurensatz;
-  /** Anteil sicher sitzender Stellungen in Prozent, null ohne Repertoire dieser Seite. */
-  sicher: Record<Seite, number | null>;
+  /** Stand je Seite, null ohne Repertoire dieser Seite. */
+  stand: Record<Seite, Seitenstand | null>;
+  /** Montag bis Sonntag der laufenden Woche: an welchen Tagen geübt wurde. */
+  woche: boolean[];
+  /** Heute in der Woche, 0 = Montag. */
+  wochentag: number;
 };
 
-function vortag(tag: string): string {
+/** Wie weit eine Seite ist: gelernt = nicht mehr neu, sicher = hält etwa drei Wochen. */
+export type Seitenstand = { stellungen: number; gelernt: number; sicher: number };
+
+function tagAusSchluessel(tag: string): Date {
   const [jahr = 0, monat = 1, t = 1] = tag.split('-').map(Number);
-  return tagSchluessel(new Date(jahr, monat - 1, t - 1));
+  return new Date(jahr, monat - 1, t);
+}
+
+function vortag(tag: string): string {
+  const d = tagAusSchluessel(tag);
+  return tagSchluessel(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1));
+}
+
+/** Montag bis Sonntag der Woche, in der `heute` liegt: true, wenn an dem Tag geübt wurde. */
+export function wocheZaehlen(
+  tage: readonly string[],
+  heute: string,
+): { woche: boolean[]; wochentag: number } {
+  const aktiv = new Set(tage);
+  const d = tagAusSchluessel(heute);
+  const wochentag = (d.getDay() + 6) % 7;
+  const woche = Array.from({ length: 7 }, (_, i) =>
+    aktiv.has(tagSchluessel(new Date(d.getFullYear(), d.getMonth(), d.getDate() - wochentag + i))),
+  );
+  return { woche, wochentag };
 }
 
 /** Zählt die Tage in Folge bis heute (oder bis gestern, wenn heute noch nichts geübt wurde). */
@@ -57,15 +84,20 @@ export async function heuteLaden(sql: Sql, jetzt = Date.now()): Promise<HeuteDat
   ]);
   const summe = (
     seite: Seite | null,
-    feld: 'faellig' | 'neu' | 'angefangen' | 'sicher' | 'stellungen',
+    feld: 'faellig' | 'neu' | 'angefangen' | 'gelernt' | 'sicher' | 'stellungen',
   ) =>
     liste
       .filter((r) => seite === null || r.seite === seite)
       .reduce((n, r) => n + r.fortschritt[feld], 0);
-  const prozent = (seite: Seite) => {
-    const alle = summe(seite, 'stellungen');
-    return alle === 0 ? null : Math.round((summe(seite, 'sicher') / alle) * 100);
-  };
+  const stand = (seite: Seite): Seitenstand | null =>
+    liste.some((r) => r.seite === seite)
+      ? {
+          stellungen: summe(seite, 'stellungen'),
+          gelernt: summe(seite, 'gelernt'),
+          sicher: summe(seite, 'sicher'),
+        }
+      : null;
+  const tagListe = tage.map((t) => t.tag);
   const nochFrei = Math.max(0, einstellungen.neuProTag - zaehler.neu);
   // Angefangene Züge (gezeigt, noch nicht gelernt) stehen immer an, frische nur bis zum Tageslimit.
   const neuHeute = (neu: number, angefangen: number) =>
@@ -89,12 +121,10 @@ export async function heuteLaden(sql: Sql, jetzt = Date.now()): Promise<HeuteDat
     wiederholungen: summe(null, 'faellig'),
     neu: neuHeute(summe(null, 'neu'), summe(null, 'angefangen')),
     erledigt: zaehler.neu + zaehler.wiederholt,
-    serie: serieZaehlen(
-      tage.map((t) => t.tag),
-      heute,
-    ),
+    serie: serieZaehlen(tagListe, heute),
     weiter: offen[0] ?? null,
     figurensatz: einstellungen.figurensatz,
-    sicher: { weiss: prozent('weiss'), schwarz: prozent('schwarz') },
+    stand: { weiss: stand('weiss'), schwarz: stand('schwarz') },
+    ...wocheZaehlen(tagListe, heute),
   };
 }

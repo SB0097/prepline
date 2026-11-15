@@ -16,7 +16,15 @@ import { einstellungLesen } from '@/daten/speicher';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
 import { APP_VERSION, Zeile } from '@/features/info/UeberSeite';
-import { Abschnitt, Federnd, RUNDUNG, SeitenTitel, TIPPFLAECHE } from '@/ui/bausteine';
+import {
+  Abschnitt,
+  Federnd,
+  Glanz,
+  RUNDUNG,
+  SeitenTitel,
+  TIEFE,
+  TIPPFLAECHE,
+} from '@/ui/bausteine';
 import { FIGURENSAETZE, type Figurensatz } from '@/ui/brett/figuren';
 import { FIGUREN_SVG } from '@/ui/brett/figurenSvg';
 import { FARBEN } from '@/ui/farben';
@@ -53,6 +61,7 @@ export function MehrSeite() {
   if (!e) return <View style={stile.seite} />;
   return (
     <ScrollView style={stile.seite} contentContainerStyle={stile.inhalt}>
+      <Glanz />
       <SeitenTitel titel="Mehr" />
       <Abschnitt titel="Figuren" />
       <View style={stile.figuren}>
@@ -251,6 +260,7 @@ const stile = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 18,
     backgroundColor: FARBEN.karte,
+    ...TIEFE,
     borderWidth: 1,
     borderColor: FARBEN.linie,
   },
@@ -261,6 +271,7 @@ const stile = StyleSheet.create({
   figurNameAktiv: { color: FARBEN.akzent, fontWeight: '700' },
   gruppe: {
     backgroundColor: FARBEN.karte,
+    ...TIEFE,
     borderRadius: RUNDUNG,
     paddingHorizontal: 20,
     overflow: 'hidden',

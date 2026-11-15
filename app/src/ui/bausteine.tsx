@@ -8,11 +8,12 @@ import {
   type PressableProps,
   type StyleProp,
   StyleSheet,
+  useWindowDimensions,
   View,
   type ViewStyle,
 } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { CSS_AUSKLINGEN, DAUER } from './bewegung';
 import { FARBEN } from './farben';
@@ -95,13 +96,44 @@ export const TIPPFLAECHE = 48;
 const RUND_AKZENT = 44;
 const RUND_LEISE = 40;
 
-/** Grundform einer Karte: Fläche mit feinem Rand. */
+/** Weicher Schatten unter Karten und eine feine Lichtkante oben (Runde 16 „Tiefe“). */
+export const TIEFE = {
+  boxShadow: `0px 8px 20px ${FARBEN.schatten}, inset 0px 1px 0px ${FARBEN.lichtkante}`,
+} as const;
+
+/** Grundform einer Karte: Fläche mit feinem Rand, Schatten und Lichtkante. */
 export const KARTE = {
   backgroundColor: FARBEN.karte,
   borderRadius: RUNDUNG,
   borderWidth: 1,
   borderColor: FARBEN.rand,
+  ...TIEFE,
 } as const;
+
+/**
+ * Sanftes Leuchten oben auf einer Hauptseite. Liegt hinter dem Inhalt und scrollt mit,
+ * deshalb als erstes Kind in den Inhalt der ScrollView legen.
+ */
+/** Deckkraft des Leuchtens in der Mitte; SVG-Verläufe brauchen sie getrennt von der Farbe. */
+const GLANZ_STAERKE = 0.14;
+
+export function Glanz() {
+  const breite = useWindowDimensions().width;
+  const hoehe = 460;
+  return (
+    <View style={[stile.glanz, { width: breite, height: hoehe }]} pointerEvents="none">
+      <Svg width={breite} height={hoehe}>
+        <Defs>
+          <RadialGradient id="glanz" cx="50%" cy="22%" rx="75%" ry="60%">
+            <Stop offset="0" stopColor={FARBEN.akzent} stopOpacity={GLANZ_STAERKE} />
+            <Stop offset="1" stopColor={FARBEN.hintergrund} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect width={breite} height={hoehe} fill="url(#glanz)" />
+      </Svg>
+    </View>
+  );
+}
 
 /** Zurück zur vorigen Seite; gibt es keine (z. B. nach einem Neustart), zur Startseite. */
 export function zurueck(): void {
@@ -114,7 +146,17 @@ export function zurueck(): void {
  * `overflow: 'hidden'` und eine Rundung. Die Fläche wird gemessen, weil das SVG
  * eine feste Größe in Pixeln braucht.
  */
-export function Verlauf({ schraeg = false }: { schraeg?: boolean }) {
+export function Verlauf({
+  schraeg = false,
+  senkrecht = false,
+  von = FARBEN.akzent,
+  bis = FARBEN.akzentHell,
+}: {
+  schraeg?: boolean;
+  senkrecht?: boolean;
+  von?: string;
+  bis?: string;
+}) {
   const [flaeche, setFlaeche] = useState({ breite: 0, hoehe: 0 });
   return (
     <View
@@ -127,9 +169,15 @@ export function Verlauf({ schraeg = false }: { schraeg?: boolean }) {
       {flaeche.breite > 0 && (
         <Svg width={flaeche.breite} height={flaeche.hoehe}>
           <Defs>
-            <LinearGradient id="verlauf" x1="0" y1="0" x2="1" y2={schraeg ? '1' : '0'}>
-              <Stop offset="0" stopColor={FARBEN.akzent} />
-              <Stop offset="1" stopColor={FARBEN.akzentHell} />
+            <LinearGradient
+              id="verlauf"
+              x1="0"
+              y1="0"
+              x2={senkrecht ? '0' : '1'}
+              y2={schraeg || senkrecht ? '1' : '0'}
+            >
+              <Stop offset="0" stopColor={von} />
+              <Stop offset="1" stopColor={bis} />
             </LinearGradient>
           </Defs>
           <Rect width={flaeche.breite} height={flaeche.hoehe} fill="url(#verlauf)" />
@@ -163,11 +211,11 @@ export function Knopf({
         aus && { opacity: 0.4 },
       ]}
     >
-      {art === 'voll' && <Verlauf />}
+      {art === 'voll' && <Verlauf von={FARBEN.knopfVon} bis={FARBEN.knopfBis} />}
       {symbol && (
         <Zeichen
           name={symbol}
-          farbe={art === 'voll' ? FARBEN.textAufAkzent : FARBEN.text}
+          farbe={art === 'voll' ? FARBEN.textAufKnopf : FARBEN.text}
           groesse={20}
         />
       )}
@@ -214,10 +262,10 @@ export function RundKnopf({
       style={[stile.rundFlaeche, { margin: ueberstand }]}
     >
       <View style={[stile.rund, art === 'leise' && stile.rundLeise]}>
-        {art === 'akzent' && <Verlauf schraeg />}
+        {art === 'akzent' && <Verlauf schraeg von={FARBEN.knopfVon} bis={FARBEN.knopfBis} />}
         <Zeichen
           name={symbol}
-          farbe={art === 'akzent' ? FARBEN.textAufAkzent : FARBEN.text}
+          farbe={art === 'akzent' ? FARBEN.textAufKnopf : FARBEN.text}
           groesse={art === 'akzent' ? 22 : 20}
         />
       </View>
@@ -272,6 +320,48 @@ export function Balken({
   );
 }
 
+/**
+ * Lernfortschritt als zweifarbiger Balken (Serkan 15.11.2026): der helle Teil zeigt, was schon
+ * gelernt ist, der kräftige Teil, was davon sicher sitzt. So sieht man schon nach dem ersten
+ * Training etwas, obwohl „sicher“ erst nach etwa drei Wochen erreicht ist.
+ */
+export function Lernbalken({
+  stellungen,
+  gelernt,
+  sicher,
+  hoehe = 6,
+}: {
+  stellungen: number;
+  gelernt: number;
+  sicher: number;
+  hoehe?: number;
+}) {
+  const anteil = (n: number) => (stellungen === 0 ? 0 : Math.max(0, Math.min(1, n / stellungen)));
+  const rund = { height: hoehe, borderRadius: hoehe / 2 };
+  return (
+    <View
+      style={[stile.balken, rund]}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: stellungen, now: gelernt }}
+    >
+      {gelernt > 0 && (
+        <View
+          style={[
+            stile.lernTeil,
+            rund,
+            { width: `${anteil(gelernt) * 100}%`, backgroundColor: FARBEN.gelernt },
+          ]}
+        />
+      )}
+      {sicher > 0 && (
+        <View style={[stile.lernTeil, rund, { width: `${anteil(sicher) * 100}%` }]}>
+          <Verlauf />
+        </View>
+      )}
+    </View>
+  );
+}
+
 /** Kleiner Kreis in der Farbe einer Seite (weiße oder schwarze Figuren). */
 export function Seitenpunkt({
   seite,
@@ -319,9 +409,8 @@ export function Umschalter<T extends string>({
             accessibilityRole="tab"
             accessibilityState={{ selected: aktiv }}
             accessibilityLabel={w.titel}
-            style={stile.umschalterTeil}
+            style={[stile.umschalterTeil, aktiv && stile.umschalterTeilAktiv]}
           >
-            {aktiv && <Verlauf />}
             {w.seite && <Seitenpunkt seite={w.seite} />}
             <Text style={[stile.umschalterText, aktiv && stile.umschalterTextAktiv]}>
               {w.titel}
@@ -400,11 +489,12 @@ const stile = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: FARBEN.akzent,
+    backgroundColor: FARBEN.knopfVon,
     borderRadius: 29,
     paddingVertical: 17,
     paddingHorizontal: 18,
     overflow: 'hidden',
+    boxShadow: `0px 8px 22px ${FARBEN.knopfLeuchten}`,
   },
   knopfLeise: {
     flexDirection: 'row',
@@ -426,7 +516,7 @@ const stile = StyleSheet.create({
     paddingHorizontal: 18,
   },
   knopfTextRahmen: { color: FARBEN.text, fontSize: 16, fontWeight: '600' },
-  knopfTextVoll: { color: FARBEN.textAufAkzent, fontSize: 18, fontWeight: '700' },
+  knopfTextVoll: { color: FARBEN.textAufKnopf, fontSize: 18, fontWeight: '700' },
   knopfTextLeise: { color: FARBEN.akzent, fontSize: 16, fontWeight: '600' },
   rundFlaeche: {
     width: TIPPFLAECHE,
@@ -441,7 +531,8 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: FARBEN.akzent,
+    backgroundColor: FARBEN.knopfVon,
+    boxShadow: `0px 6px 16px ${FARBEN.knopfLeuchten}`,
   },
   rundLeise: {
     width: RUND_LEISE,
@@ -450,8 +541,11 @@ const stile = StyleSheet.create({
     backgroundColor: FARBEN.karte,
     borderWidth: 1,
     borderColor: FARBEN.rand,
+    boxShadow: `inset 0px 1px 0px ${FARBEN.lichtkante}`,
   },
   balken: { backgroundColor: FARBEN.karteHell, overflow: 'hidden' },
+  lernTeil: { position: 'absolute', left: 0, top: 0, overflow: 'hidden' },
+  glanz: { position: 'absolute', top: 0, left: 0 },
   balkenVoll: { backgroundColor: FARBEN.akzent, overflow: 'hidden' },
   umschalter: {
     flexDirection: 'row',
@@ -474,7 +568,12 @@ const stile = StyleSheet.create({
   },
   umschalterText: { color: FARBEN.textLeise, fontSize: 15, fontWeight: '700' },
   umschalterZahl: { color: FARBEN.textLeise, fontSize: 13, fontWeight: '700', opacity: 0.65 },
-  umschalterTextAktiv: { color: FARBEN.textAufAkzent },
+  // Aktiver Teil als erhöhte Fläche mit Lichtkante statt Farbverlauf (Runde 16).
+  umschalterTeilAktiv: {
+    backgroundColor: FARBEN.karteHell,
+    boxShadow: `0px 2px 6px ${FARBEN.schatten}, inset 0px 1px 0px ${FARBEN.lichtkante}`,
+  },
+  umschalterTextAktiv: { color: FARBEN.text },
   // Bei großer Systemschrift rutscht das Element rechts (z. B. die Serie) unter den Titel.
   titelZeile: {
     flexDirection: 'row',

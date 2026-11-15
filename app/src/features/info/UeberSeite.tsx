@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Abschnitt, RUNDUNG, Zeilenknopf, ZurueckKopf } from '@/ui/bausteine';
+import { Abschnitt, RUNDUNG, TIEFE, Zeilenknopf, ZurueckKopf } from '@/ui/bausteine';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
 import { Zeichen } from '@/ui/symbole';
@@ -128,6 +128,7 @@ const stile = StyleSheet.create({
   satz: { color: FARBEN.text, fontSize: 14, marginTop: 8, textAlign: 'center' },
   gruppe: {
     backgroundColor: FARBEN.karte,
+    ...TIEFE,
     borderRadius: RUNDUNG,
     paddingHorizontal: GRUPPE_EINZUG,
     overflow: 'hidden',

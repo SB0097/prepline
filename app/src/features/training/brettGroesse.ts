@@ -1,8 +1,12 @@
 // Größe des Bretts im Training: so breit wie möglich, aber auf kleinen Handys nur so groß,
 // dass Phase („Aus dem Kopf“) und Rückmeldung („Dein Zug“, „Nicht ganz“) darunter sichtbar bleiben.
+// Das Brett liegt in einem Rahmen (Runde 16): 12 dp Seitenrand plus 6 dp Rahmen.
 
-const RAND = 16;
-const ABSTAND_OBEN = 18;
+/** Innenabstand des Rahmens um das Brett. */
+export const RAHMEN = 6;
+const RAND = 12 + RAHMEN;
+/** Abstand über dem Rahmen plus Rahmen oben und unten. */
+const ABSTAND_OBEN = 16 + 2 * RAHMEN;
 const KLEINSTE = 240;
 
 /** Platz unter dem Brett für Phase und Rückmeldung, wächst mit der Systemschrift. */

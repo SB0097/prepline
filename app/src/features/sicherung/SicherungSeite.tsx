@@ -12,7 +12,7 @@ import {
   type SicherungsInhalt,
   sicherungPruefen,
 } from '@/daten/sicherung';
-import { Knopf, RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
+import { Knopf, RUNDUNG, TIEFE, ZurueckKopf } from '@/ui/bausteine';
 import { BestaetigenDialog } from '@/ui/Dialog';
 import { FARBEN } from '@/ui/farben';
 import { Text } from '@/ui/Text';
@@ -181,7 +181,7 @@ const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
   rand: { paddingHorizontal: 20 },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32, gap: 14 },
-  karte: { backgroundColor: FARBEN.karte, borderRadius: RUNDUNG, padding: 20, gap: 6 },
+  karte: { backgroundColor: FARBEN.karte, ...TIEFE, borderRadius: RUNDUNG, padding: 20, gap: 6 },
   titel: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
   text: { color: FARBEN.textLeise, fontSize: 14, lineHeight: 20 },
   knopf: { marginTop: 10 },

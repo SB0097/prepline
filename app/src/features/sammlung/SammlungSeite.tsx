@@ -18,7 +18,7 @@ import { einstellungenLaden } from '@/daten/einstellungen';
 import { sammlungImRepertoire } from '@/daten/sammlung';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
-import { Abschnitt, ZurueckKopf } from '@/ui/bausteine';
+import { Abschnitt, TIEFE, ZurueckKopf } from '@/ui/bausteine';
 import type { Figurensatz } from '@/ui/brett/figuren';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
@@ -169,6 +169,7 @@ const stile = StyleSheet.create({
   filter: { gap: 6, paddingHorizontal: 20, paddingVertical: 4 },
   chip: {
     backgroundColor: FARBEN.karte,
+    ...TIEFE,
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -183,6 +184,7 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     backgroundColor: FARBEN.karte,
+    ...TIEFE,
     borderRadius: 20,
     padding: 10,
   },
