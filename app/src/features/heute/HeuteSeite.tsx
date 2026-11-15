@@ -207,6 +207,9 @@ function Pille({ farbe, text }: { farbe: string; text: string }) {
 
 const RING = { groesse: 92, strich: 9 };
 
+/** Durchmesser der Tageskreise in „Diese Woche“. */
+const TAG = 30;
+
 /** Ring wie der Lernbalken: hell = gelernt, kräftig = sicher. In der Mitte der Anteil gelernt. */
 function LernRing({ stand }: { stand: Seitenstand }) {
   const r = (RING.groesse - RING.strich) / 2;
@@ -281,19 +284,32 @@ function Woche({ woche, wochentag }: { woche: boolean[]; wochentag: number }) {
         return (
           <View key={i} style={stile.tag}>
             <Text style={[stile.tagName, heute && { color: FARBEN.text }]}>{tag}</Text>
-            <View
-              style={[
-                stile.tagKreis,
-                heute && !geuebtAnTag && stile.tagHeute,
-                i > wochentag && stile.tagSpaeter,
-              ]}
-            >
-              {geuebtAnTag && (
-                <>
-                  <Verlauf schraeg />
-                  <Zeichen name="haken" farbe={FARBEN.textAufAkzent} groesse={16} />
-                </>
-              )}
+            {/* Kreis als Grafik: Mit Rundung zugeschnittene Flächen werden auf manchen
+                Samsung-Geräten unten und rechts abgeschnitten. */}
+            <View style={[stile.tagKreis, i > wochentag && stile.tagSpaeter]}>
+              <Svg width={TAG} height={TAG} style={StyleSheet.absoluteFill}>
+                <Defs>
+                  <LinearGradient id="tag" x1="0" y1="0" x2="1" y2="1">
+                    <Stop offset="0" stopColor={FARBEN.akzent} />
+                    <Stop offset="1" stopColor={FARBEN.akzentHell} />
+                  </LinearGradient>
+                </Defs>
+                {geuebtAnTag ? (
+                  <Circle cx={TAG / 2} cy={TAG / 2} r={TAG / 2} fill="url(#tag)" />
+                ) : heute ? (
+                  <Circle
+                    cx={TAG / 2}
+                    cy={TAG / 2}
+                    r={TAG / 2 - 1}
+                    fill="none"
+                    stroke={FARBEN.akzent}
+                    strokeWidth={2}
+                  />
+                ) : (
+                  <Circle cx={TAG / 2} cy={TAG / 2} r={TAG / 2} fill={FARBEN.karteHell} />
+                )}
+              </Svg>
+              {geuebtAnTag && <Zeichen name="haken" farbe={FARBEN.textAufAkzent} groesse={16} />}
             </View>
           </View>
         );
@@ -433,16 +449,7 @@ const stile = StyleSheet.create({
   },
   tag: { alignItems: 'center', gap: 8, flex: 1 },
   tagName: { color: FARBEN.textLeise, fontSize: 12, fontWeight: '600' },
-  tagKreis: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: FARBEN.karteHell,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  tagHeute: { borderWidth: 2, borderColor: FARBEN.akzent, backgroundColor: 'transparent' },
+  tagKreis: { width: TAG, height: TAG, alignItems: 'center', justifyContent: 'center' },
   tagSpaeter: { opacity: 0.5 },
   seiten: { flexDirection: 'row', gap: 12 },
   seitenkarte: { flex: 1, padding: 14, gap: 10, borderRadius: 18 },

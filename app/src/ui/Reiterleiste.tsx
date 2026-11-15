@@ -5,6 +5,7 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Rect } from 'react-native-svg';
 import { Text } from './Text';
 
 import { FARBEN } from './farben';
@@ -15,6 +16,9 @@ const SYMBOLE: Record<string, Symbolname> = {
   repertoire: 'repertoire',
   mehr: 'mehr',
 };
+
+/** Größe der Pille hinter dem aktiven Symbol. */
+const PILLE = { breite: 60, hoehe: 32 };
 
 /** Abstand zwischen Leiste und Systemknöpfen. */
 const ABSTAND_UNTEN = 20;
@@ -48,7 +52,18 @@ export function Reiterleiste({ state, descriptors, emitter, navigateToTab }: Bot
             accessibilityLabel={titel}
             style={({ pressed }) => [stile.punkt, pressed && stile.gedrueckt]}
           >
-            <View style={[stile.pille, aktiv && stile.pilleAktiv]}>
+            <View style={stile.pille}>
+              {/* Als Grafik gezeichnet: Eine kleine runde Fläche wird auf manchen Samsung-Geräten eckig. */}
+              {aktiv && (
+                <Svg width={PILLE.breite} height={PILLE.hoehe} style={StyleSheet.absoluteFill}>
+                  <Rect
+                    width={PILLE.breite}
+                    height={PILLE.hoehe}
+                    rx={PILLE.hoehe / 2}
+                    fill={FARBEN.akzentFlaeche}
+                  />
+                </Svg>
+              )}
               <Zeichen name={SYMBOLE[route.name] ?? 'mehr'} farbe={farbe} />
             </View>
             <Text style={[stile.text, { color: farbe }, aktiv && stile.textAktiv]}>{titel}</Text>
@@ -71,13 +86,11 @@ const stile = StyleSheet.create({
   gedrueckt: { opacity: 0.6 },
   // Aktiver Reiter: Symbol auf einer hellen Pille (Runde 16).
   pille: {
-    width: 60,
-    height: 32,
-    borderRadius: 16,
+    width: PILLE.breite,
+    height: PILLE.hoehe,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pilleAktiv: { backgroundColor: FARBEN.akzentFlaeche },
   text: { fontSize: 12 },
   textAktiv: { fontWeight: '700' },
 });
