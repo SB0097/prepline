@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 
-import { Federnd, RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
+import { Federnd, RUNDUNG, TIEFE, ZurueckKopf } from '@/ui/bausteine';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
 import { Text } from '@/ui/Text';
@@ -119,6 +119,7 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
     backgroundColor: FARBEN.karte,
+    ...TIEFE,
     borderRadius: RUNDUNG,
     padding: 20,
   },

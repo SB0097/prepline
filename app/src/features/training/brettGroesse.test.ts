@@ -2,17 +2,17 @@ import { brettGroesse, platzUnterBrett } from './brettGroesse';
 
 describe('brettGroesse', () => {
   it('nimmt die volle Breite, solange die Höhe unbekannt ist', () => {
-    expect(brettGroesse(412, null)).toBe(380);
+    expect(brettGroesse(412, null)).toBe(376);
   });
 
   it('nimmt die volle Breite auf großen Handys', () => {
-    expect(brettGroesse(412, 640)).toBe(380);
+    expect(brettGroesse(412, 640)).toBe(376);
   });
 
   it('wird auf kleinen Handys kleiner, damit die Rückmeldung sichtbar bleibt', () => {
-    const groesse = brettGroesse(360, 400);
-    expect(groesse).toBeLessThan(328);
-    expect(groesse + 18 + platzUnterBrett(1)).toBeLessThanOrEqual(400);
+    const groesse = brettGroesse(360, 420);
+    expect(groesse).toBeLessThan(324);
+    expect(groesse + 28 + platzUnterBrett(1)).toBeLessThanOrEqual(420);
   });
 
   it('wird nie kleiner als 240', () => {
@@ -20,7 +20,7 @@ describe('brettGroesse', () => {
   });
 
   it('ist auf sehr schmalen Bildschirmen höchstens so breit wie der Platz', () => {
-    expect(brettGroesse(250, 100)).toBe(218);
+    expect(brettGroesse(250, 100)).toBe(214);
   });
 
   it('lässt bei großer Schrift mehr Platz unter dem Brett', () => {

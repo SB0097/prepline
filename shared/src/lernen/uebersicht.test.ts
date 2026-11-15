@@ -15,7 +15,7 @@ describe('Übersicht', () => {
     );
   });
 
-  it('zählt neue, fällige und sichere Stellungen', () => {
+  it('zählt neue, gelernte, fällige und sichere Stellungen', () => {
     const baum = zusammenfuehren(pgnLesen(EVANS).partien)[0]!;
     const karten = kartenAusBaum(baum, 'weiss');
     const gelernt = bewerten(gezeigt(neuerLernstand(JETZT), JETZT), true, JETZT);
@@ -26,6 +26,7 @@ describe('Übersicht', () => {
       faellig: 0,
       neu: 5,
       angefangen: 0,
+      gelernt: 1,
       sicher: 0,
     });
     // Gezeigt, aber noch nicht gelernt: zählt weiter als neu und zusätzlich als angefangen.

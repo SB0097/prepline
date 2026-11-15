@@ -10,7 +10,7 @@ import {
 } from '@/daten/speicher';
 import { testDatenbank } from '@/test/nodeSql';
 
-import { heuteLaden, serieZaehlen } from './heuteDaten';
+import { heuteLaden, serieZaehlen, wocheZaehlen } from './heuteDaten';
 
 const JETZT = Date.UTC(2026, 10, 11, 10, 0);
 const TAG = 86_400_000;
@@ -27,7 +27,9 @@ describe('Zahlen für „Heute“', () => {
       serie: 0,
       weiter: null,
       figurensatz: 'klassisch',
-      sicher: { weiss: null, schwarz: null },
+      stand: { weiss: null, schwarz: null },
+      woche: [false, false, false, false, false, false, false],
+      wochentag: 2,
     });
   });
 
@@ -35,7 +37,10 @@ describe('Zahlen für „Heute“', () => {
     const sql = await testDatenbank();
     await pgnImportieren(sql, EVANS, { name: 'Italienisch', seite: 'weiss' });
     await einstellungAendern(sql, 'neuProTag', 5);
-    expect(await heuteLaden(sql, JETZT)).toMatchObject({ neu: 5, sicher: { weiss: 0 } });
+    expect(await heuteLaden(sql, JETZT)).toMatchObject({
+      neu: 5,
+      stand: { weiss: { stellungen: 6, gelernt: 0, sicher: 0 }, schwarz: null },
+    });
     await tageszaehlerErhoehen(sql, tagSchluessel(JETZT), { neu: 3 });
     expect((await heuteLaden(sql, JETZT)).neu).toBe(2);
   });
@@ -48,7 +53,10 @@ describe('Zahlen für „Heute“', () => {
     const karte = kartenAusBaum(rep.baum, 'weiss')[0]!;
     const stand = bewerten(gezeigt(neuerLernstand(JETZT), JETZT), true, JETZT);
     await lernstandSpeichern(sql, ids[0]!, karte.schluessel, stand);
-    expect((await heuteLaden(sql, JETZT + 365 * TAG)).wiederholungen).toBe(1);
+    const spaeter = await heuteLaden(sql, JETZT + 365 * TAG);
+    expect(spaeter.wiederholungen).toBe(1);
+    // Gelernt zählt sofort, auch wenn die Stellung noch lange nicht sicher ist.
+    expect(spaeter.stand.weiss).toEqual({ stellungen: 6, gelernt: 1, sicher: 0 });
   });
 
   it('zählt, was heute schon geübt wurde', async () => {
@@ -98,6 +106,24 @@ describe('Zahlen für „Heute“', () => {
       await tageszaehlerErhoehen(sql, tagSchluessel(JETZT - zurueck * TAG), { wiederholt: 1 });
     }
     expect((await heuteLaden(sql, JETZT)).serie).toBe(3);
+  });
+});
+
+describe('Woche', () => {
+  it('markiert die Übungstage von Montag bis Sonntag', () => {
+    // Der 11.11.2026 ist ein Mittwoch; Sonntag davor und Montag danach gehören nicht dazu.
+    const tage = ['2026-11-09', '2026-11-11', '2026-11-08', '2026-11-16'];
+    expect(wocheZaehlen(tage, '2026-11-11')).toEqual({
+      woche: [true, false, true, false, false, false, false],
+      wochentag: 2,
+    });
+  });
+
+  it('zählt den Sonntag zur laufenden Woche', () => {
+    expect(wocheZaehlen(['2026-11-15', '2026-11-09'], '2026-11-15')).toEqual({
+      woche: [true, false, false, false, false, false, true],
+      wochentag: 6,
+    });
   });
 });
 

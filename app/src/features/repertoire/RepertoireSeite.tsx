@@ -2,22 +2,30 @@ import type { Seite } from '@prepline/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 import { einstellungenLaden } from '@/daten/einstellungen';
 import { type RepertoireUebersicht, repertoireUebersicht } from '@/daten/speicher';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
-import { RundKnopf, SeitenTitel, Umschalter, Zeilenknopf } from '@/ui/bausteine';
+import {
+  Federnd,
+  Glanz,
+  KARTE,
+  Lernbalken,
+  RundKnopf,
+  SeitenTitel,
+  Umschalter,
+} from '@/ui/bausteine';
 import type { Figurensatz } from '@/ui/brett/figuren';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
+import { Zeichen } from '@/ui/symbole';
 import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
-// Repertoire-Seite (Layout „Ruhig & groß“, Serkan 14.11.2026): Umschalter Weiß/Schwarz,
-// darunter eine ruhige Liste: Mini-Brett, Name, Status, Stellungen und ein kleiner Prozent-Ring.
-// Hinzugefügt wird nur über das Plus oben rechts (Serkan 12.11.2026).
-const BRETT = 72;
+// Repertoire-Seite, Runde 16 „Tiefe“ (Serkan 15.11.2026): Umschalter Weiß/Schwarz, darunter eine
+// Übersicht (Stellungen, fällig, gelernt) und je Eröffnung eine Karte mit Mini-Brett, Status und
+// zweifarbigem Lernbalken. Am Ende eine Karte „Eröffnung hinzufügen“ zusätzlich zum Plus oben.
+const BRETT = 64;
 
 async function laden(sql: Sql) {
   const [liste, einstellungen] = await Promise.all([
@@ -27,15 +35,20 @@ async function laden(sql: Sql) {
   return { liste, figurensatz: einstellungen.figurensatz };
 }
 
+const prozent = (teil: number, ganz: number) => (ganz === 0 ? 0 : Math.round((teil / ganz) * 100));
+
 export function RepertoireSeite() {
   const daten = useGeladen(laden);
   const [seite, setSeite] = useState<Seite>('weiss');
   const liste = daten?.liste.filter((r) => r.seite === seite) ?? [];
   const anzahl = (s: Seite) => daten?.liste.filter((r) => r.seite === s).length;
   const hinzufuegen = () => router.push('/import');
+  const summe = (feld: 'stellungen' | 'faellig' | 'gelernt') =>
+    liste.reduce((n, r) => n + r.fortschritt[feld], 0);
 
   return (
     <ScrollView style={stile.seite} contentContainerStyle={stile.inhalt}>
+      <Glanz />
       <SeitenTitel
         titel="Repertoire"
         rechts={
@@ -57,48 +70,74 @@ export function RepertoireSeite() {
         wert={seite}
         onWahl={setSeite}
       />
-      <View style={stile.liste}>
-        {daten &&
-          liste.map((r, i) => (
-            <Zeile
-              key={r.id}
-              rep={r}
-              figurensatz={daten.figurensatz}
-              letzte={i === liste.length - 1}
-            />
-          ))}
-      </View>
-      {daten && liste.length === 0 && (
-        <View style={stile.leer}>
-          <Text style={stile.leerTitel}>
-            Noch keine Eröffnung mit {seite === 'weiss' ? 'Weiß' : 'Schwarz'}
-          </Text>
-          <Text style={stile.leerText}>Tippe oben rechts auf das Plus, um eine hinzuzufügen.</Text>
+      {daten && liste.length > 0 && (
+        <View style={[KARTE, stile.uebersicht]}>
+          <Kennzahl wert={String(summe('stellungen'))} titel="Stellungen" />
+          <View style={stile.teiler} />
+          <Kennzahl
+            wert={String(summe('faellig'))}
+            titel="fällig"
+            farbe={summe('faellig') > 0 ? FARBEN.hinweis : FARBEN.text}
+          />
+          <View style={stile.teiler} />
+          <Kennzahl wert={`${prozent(summe('gelernt'), summe('stellungen'))} %`} titel="gelernt" />
         </View>
       )}
+      <View style={stile.liste}>
+        {daten && liste.map((r) => <Karte key={r.id} rep={r} figurensatz={daten.figurensatz} />)}
+        {daten && (
+          <Federnd
+            onPress={hinzufuegen}
+            accessibilityRole="button"
+            accessibilityLabel="Eröffnung hinzufügen"
+            style={stile.hinzufuegen}
+          >
+            <Zeichen name="plus" farbe={FARBEN.akzentHell} groesse={20} />
+            <Text style={stile.hinzufuegenText}>
+              {liste.length === 0
+                ? `Erste Eröffnung mit ${seite === 'weiss' ? 'Weiß' : 'Schwarz'} hinzufügen`
+                : 'Eröffnung hinzufügen'}
+            </Text>
+          </Federnd>
+        )}
+      </View>
     </ScrollView>
   );
 }
 
-function Zeile({
-  rep,
-  figurensatz,
-  letzte,
+function Kennzahl({
+  wert,
+  titel,
+  farbe = FARBEN.text,
 }: {
-  rep: RepertoireUebersicht;
-  figurensatz: Figurensatz;
-  letzte: boolean;
+  wert: string;
+  titel: string;
+  farbe?: string;
 }) {
-  const { faellig, neu, sicher, stellungen } = rep.fortschritt;
-  const offen = faellig + neu > 0;
-  const status = faellig > 0 ? `${faellig} fällig` : neu > 0 ? `${neu} neu` : 'alles gut';
-  const prozent = stellungen === 0 ? 0 : Math.round((sicher / stellungen) * 100);
   return (
-    <Zeilenknopf
+    <View style={stile.kennzahl} accessible accessibilityLabel={`${wert} ${titel}`}>
+      <Text style={[stile.kennzahlWert, ZIFFERN_GLEICH, { color: farbe }]} numberOfLines={1}>
+        {wert}
+      </Text>
+      <Text style={stile.kennzahlTitel} numberOfLines={1} adjustsFontSizeToFit>
+        {titel}
+      </Text>
+    </View>
+  );
+}
+
+function Karte({ rep, figurensatz }: { rep: RepertoireUebersicht; figurensatz: Figurensatz }) {
+  const { faellig, neu, gelernt, sicher, stellungen } = rep.fortschritt;
+  const fertig = faellig + neu === 0;
+  const status = faellig > 0 ? `${faellig} fällig` : neu > 0 ? `${neu} neu` : 'alles gelernt';
+  const statusFarbe = faellig > 0 ? FARBEN.hinweis : neu > 0 ? FARBEN.akzentHell : FARBEN.richtig;
+  const anteil = prozent(gelernt, stellungen);
+  return (
+    <Federnd
       onPress={() => router.push({ pathname: '/eroeffnung/[id]', params: { id: String(rep.id) } })}
       accessibilityRole="button"
-      accessibilityLabel={`${rep.name}, ${status}, ${prozent} Prozent sicher`}
-      style={stile.zeile}
+      accessibilityLabel={`${rep.name}, ${status}, ${gelernt} von ${stellungen} gelernt, ${sicher} sicher`}
+      style={[KARTE, stile.karte]}
     >
       <View style={stile.brett}>
         <Schachbrett
@@ -110,69 +149,28 @@ function Zeile({
           koordinaten={false}
         />
       </View>
-      <View style={[stile.text, !letzte && stile.trenner]}>
-        <View style={stile.textSpalte}>
-          <Text style={stile.name} numberOfLines={1}>
-            {rep.name}
-          </Text>
-          <Text style={[stile.status, { color: offen ? FARBEN.akzent : FARBEN.richtig }]}>
-            {status}
-          </Text>
-          <Text style={stile.leise}>
-            {stellungen === 1 ? '1 Stellung' : `${stellungen} Stellungen`}
+      <View style={stile.text}>
+        <Text style={stile.name} numberOfLines={1}>
+          {rep.name}
+        </Text>
+        <Text style={stile.leise} numberOfLines={1}>
+          {stellungen === 1 ? '1 Stellung' : `${stellungen} Stellungen`}
+          {' · '}
+          <Text style={[stile.status, { color: statusFarbe }]}>{status}</Text>
+        </Text>
+        <View style={stile.balkenZeile}>
+          <View style={stile.balken}>
+            <Lernbalken stellungen={stellungen} gelernt={gelernt} sicher={sicher} hoehe={5} />
+          </View>
+          <Text
+            style={[stile.prozent, ZIFFERN_GLEICH, fertig && { color: FARBEN.richtig }]}
+            maxFontSizeMultiplier={1.3}
+          >
+            {anteil} %
           </Text>
         </View>
-        <ProzentRing prozent={prozent} />
       </View>
-    </Zeilenknopf>
-  );
-}
-
-const RING = { groesse: 40, strich: 4 };
-
-/** Kleiner Ring mit dem Anteil sicherer Stellungen. */
-function ProzentRing({ prozent }: { prozent: number }) {
-  const r = (RING.groesse - RING.strich) / 2;
-  const mitte = RING.groesse / 2;
-  const umfang = 2 * Math.PI * r;
-  return (
-    <View style={stile.ring}>
-      <Svg width={RING.groesse} height={RING.groesse}>
-        <Defs>
-          <LinearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={FARBEN.akzent} />
-            <Stop offset="1" stopColor={FARBEN.akzentHell} />
-          </LinearGradient>
-        </Defs>
-        <Circle
-          cx={mitte}
-          cy={mitte}
-          r={r}
-          fill="none"
-          stroke={FARBEN.karteHell}
-          strokeWidth={RING.strich}
-        />
-        {prozent > 0 && (
-          <Circle
-            cx={mitte}
-            cy={mitte}
-            r={r}
-            fill="none"
-            stroke="url(#ring)"
-            strokeWidth={RING.strich}
-            strokeLinecap="round"
-            strokeDasharray={`${(umfang * prozent) / 100} ${umfang}`}
-            transform={`rotate(-90 ${mitte} ${mitte})`}
-          />
-        )}
-      </Svg>
-      <View style={stile.ringMitte}>
-        {/* Der Ring hat eine feste Größe, deshalb wächst die Zahl kaum mit. */}
-        <Text style={[stile.ringText, ZIFFERN_GLEICH]} maxFontSizeMultiplier={1.2}>
-          {prozent}%
-        </Text>
-      </View>
-    </View>
+    </Federnd>
   );
 }
 
@@ -180,25 +178,51 @@ const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32 },
   plusKnopf: { marginBottom: 2 },
-  liste: { marginTop: 14 },
-  zeile: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  brett: { borderRadius: 12, overflow: 'hidden' },
-  text: {
-    flex: 1,
+  uebersicht: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 18,
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 18,
   },
-  trenner: { borderBottomWidth: 1, borderBottomColor: FARBEN.rand },
-  textSpalte: { flex: 1, gap: 3 },
+  kennzahl: { flex: 1, alignItems: 'center', gap: 2, paddingHorizontal: 6 },
+  kennzahlWert: { fontSize: 21, fontWeight: '800', letterSpacing: -0.4 },
+  kennzahlTitel: { color: FARBEN.textLeise, fontSize: 12.5 },
+  teiler: { width: 1, alignSelf: 'stretch', backgroundColor: FARBEN.rand },
+  liste: { marginTop: 14, gap: 12 },
+  karte: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 12,
+    paddingRight: 16,
+    borderRadius: 20,
+  },
+  brett: { borderRadius: 10, overflow: 'hidden' },
+  text: { flex: 1, gap: 4 },
   name: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
-  status: { fontSize: 14, fontWeight: '700' },
   leise: { color: FARBEN.textLeise, fontSize: 13 },
-  ring: { width: RING.groesse, height: RING.groesse },
-  ringMitte: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  ringText: { color: FARBEN.textLeise, fontSize: 10, fontWeight: '700' },
-  leer: { alignItems: 'center', gap: 6, paddingHorizontal: 24, paddingTop: 56 },
-  leerTitel: { color: FARBEN.text, fontSize: 18, fontWeight: '700', textAlign: 'center' },
-  leerText: { color: FARBEN.textLeise, fontSize: 15, lineHeight: 21, textAlign: 'center' },
+  status: { fontWeight: '700' },
+  balkenZeile: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
+  balken: { flex: 1 },
+  prozent: {
+    color: FARBEN.text,
+    fontSize: 13,
+    fontWeight: '800',
+    minWidth: 38,
+    textAlign: 'right',
+  },
+  hinzufuegen: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    minHeight: 64,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: FARBEN.linie,
+  },
+  hinzufuegenText: { color: FARBEN.akzentHell, fontSize: 15, fontWeight: '600', flexShrink: 1 },
 });

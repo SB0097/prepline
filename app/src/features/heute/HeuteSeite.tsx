@@ -1,26 +1,42 @@
+import type { Seite } from '@prepline/shared';
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 import { useGeladen } from '@/daten/useGeladen';
 import {
   Abschnitt,
-  Balken,
+  Federnd,
+  Glanz,
+  KARTE,
   Knopf,
+  Lernbalken,
+  RUNDUNG,
   Seitenpunkt,
   SeitenTitel,
   Verlauf,
-  Zeilenknopf,
 } from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
 import { Zeichen } from '@/ui/symbole';
-import { Text } from '@/ui/Text';
+import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
-import { heuteLaden } from './heuteDaten';
+import { heuteLaden, type Seitenstand } from './heuteDaten';
 
-// Startseite (Layout „Ruhig & groß“, Serkan 14.11.2026): große Zahl der Züge für heute ohne Karte,
-// darunter ein Balken aus erledigt / Wiederholungen / neu, der Knopf „Training starten“,
-// „Weiter mit“ als Zeile und der Fortschritt für Weiß und Schwarz als Zeilen mit Balken.
+// Startseite, Runde 16 „Tiefe“ (Serkan 15.11.2026): Hauptkarte mit der Zahl der Züge für heute,
+// Ring für den Lernfortschritt, Wiederholungen/neu und dem Knopf „Training starten“.
+// Darunter „Weiter mit“, „Diese Woche“ (Übungstage) und der Fortschritt für Weiß und Schwarz.
+const WOCHENTAGE = ['M', 'D', 'M', 'D', 'F', 'S', 'S'];
+const WOCHENTAGE_LANG = [
+  'Montag',
+  'Dienstag',
+  'Mittwoch',
+  'Donnerstag',
+  'Freitag',
+  'Samstag',
+  'Sonntag',
+];
+
 export function HeuteSeite() {
   const daten = useGeladen(heuteLaden);
   const datum = new Date().toLocaleDateString('de-DE', {
@@ -31,9 +47,11 @@ export function HeuteSeite() {
   if (!daten) return <View style={stile.seite} />;
   const gesamt = daten.wiederholungen + daten.neu;
   const weiter = daten.weiter;
+  const beide = zusammen(daten.stand.weiss, daten.stand.schwarz);
 
   return (
     <ScrollView style={stile.seite} contentContainerStyle={stile.inhalt}>
+      <Glanz />
       <SeitenTitel
         titel="Heute"
         oben={datum}
@@ -53,7 +71,7 @@ export function HeuteSeite() {
         }
       />
       {daten.anzahlRepertoires === 0 ? (
-        <View style={stile.leer}>
+        <View style={[KARTE, stile.leer]}>
           <Text style={stile.leerTitel}>Noch keine Eröffnung</Text>
           <Text style={stile.leerText}>
             Füge eine Eröffnung hinzu, dann siehst du hier jeden Tag, was dran ist.
@@ -65,49 +83,67 @@ export function HeuteSeite() {
           />
         </View>
       ) : (
-        <>
-          <View style={stile.zahlZeile}>
-            {gesamt > 0 ? (
-              <Text style={stile.zahl} testID="zuege-heute">
-                {gesamt}
-              </Text>
-            ) : (
-              <View style={stile.geschafft}>
-                <Zeichen name="haken" farbe={FARBEN.richtig} groesse={44} />
-              </View>
-            )}
-            <View>
-              <Text style={stile.zahlTitel}>
-                {gesamt === 0 ? 'Geschafft' : gesamt === 1 ? 'Zug' : 'Züge'}
-              </Text>
-              <Text style={stile.zahlUnter}>für heute</Text>
-            </View>
+        <View style={[KARTE, stile.haupt]}>
+          {/* Verlauf von oben hell nach unten dunkel, darüber die Lichtkante. */}
+          <View style={stile.hauptVerlauf} pointerEvents="none">
+            <Verlauf senkrecht von={FARBEN.karteOben} bis={FARBEN.karte} />
           </View>
-          <Verteilung erledigt={daten.erledigt} wdh={daten.wiederholungen} neu={daten.neu} />
+          <View style={stile.lichtkante} pointerEvents="none" />
+          <View style={stile.hauptZeile}>
+            <View style={stile.hauptLinks}>
+              <Text style={stile.marke}>HEUTE DRAN</Text>
+              {gesamt > 0 ? (
+                <Text style={[stile.zahl, ZIFFERN_GLEICH]} testID="zuege-heute">
+                  {gesamt}
+                </Text>
+              ) : (
+                <View style={stile.geschafft}>
+                  <Zeichen name="haken" farbe={FARBEN.richtig} groesse={40} />
+                </View>
+              )}
+              <Text style={stile.zahlUnter}>
+                {gesamt === 0
+                  ? 'Geschafft für heute'
+                  : gesamt === 1
+                    ? 'Zug für heute'
+                    : 'Züge für heute'}
+              </Text>
+            </View>
+            {beide && <LernRing stand={beide} />}
+          </View>
+          <View style={stile.pillen}>
+            {daten.wiederholungen > 0 && (
+              <Pille farbe={FARBEN.hinweis} text={`${daten.wiederholungen} wiederholen`} />
+            )}
+            {daten.neu > 0 && <Pille farbe={FARBEN.akzent} text={`${daten.neu} neu`} />}
+            {daten.erledigt > 0 && (
+              <Pille farbe={FARBEN.richtig} text={`${daten.erledigt} erledigt`} />
+            )}
+          </View>
           <Knopf
             titel={gesamt > 0 ? 'Training starten' : 'Für heute alles erledigt'}
             {...(gesamt > 0 && { symbol: 'start' as const })}
             onPress={() => router.push('/training')}
             aus={gesamt === 0}
           />
-        </>
+        </View>
       )}
 
       {weiter && (
         <>
           <Abschnitt titel="Weiter mit" />
-          <Zeilenknopf
+          <Federnd
             onPress={() =>
               router.push({ pathname: '/training', params: { id: String(weiter.id) } })
             }
             accessibilityRole="button"
             accessibilityLabel={`Nur ${weiter.name} trainieren`}
-            style={stile.weiter}
+            style={[KARTE, stile.weiter]}
           >
             <View style={stile.miniBrett}>
               <Schachbrett
                 fen={weiter.endFen}
-                groesse={56}
+                groesse={52}
                 ansicht={weiter.seite}
                 figurensatz={daten.figurensatz}
                 bedienbar={false}
@@ -127,73 +163,174 @@ export function HeuteSeite() {
               </Text>
             </View>
             <View style={stile.weiterKnopf}>
-              <Zeichen name="start" farbe={FARBEN.text} groesse={18} />
+              <Zeichen name="start" farbe={FARBEN.text} groesse={16} />
             </View>
-          </Zeilenknopf>
+          </Federnd>
         </>
       )}
 
       {daten.anzahlRepertoires > 0 && (
         <>
+          <Abschnitt titel="Diese Woche" />
+          <Woche woche={daten.woche} wochentag={daten.wochentag} />
           <Abschnitt titel="Fortschritt" />
-          <Seitenzeile seite="weiss" prozent={daten.sicher.weiss} />
-          <View style={stile.trenner} />
-          <Seitenzeile seite="schwarz" prozent={daten.sicher.schwarz} />
+          <View style={stile.seiten}>
+            <Seitenkarte seite="weiss" stand={daten.stand.weiss} />
+            <Seitenkarte seite="schwarz" stand={daten.stand.schwarz} />
+          </View>
         </>
       )}
     </ScrollView>
   );
 }
 
-/** Balken aus drei Teilen: schon erledigt (grün), Wiederholungen (hell) und neue Züge (Akzent). */
-function Verteilung({ erledigt, wdh, neu }: { erledigt: number; wdh: number; neu: number }) {
-  const teile = [
-    { wert: erledigt, farbe: FARBEN.richtig, text: 'erledigt' },
-    { wert: wdh, farbe: FARBEN.text, text: wdh === 1 ? 'Wiederholung' : 'Wiederholungen' },
-    { wert: neu, farbe: FARBEN.akzent, text: 'neu' },
-  ].filter((t) => t.wert > 0);
-  if (teile.length === 0) return <View style={stile.verteilungLeer} />;
+function zusammen(a: Seitenstand | null, b: Seitenstand | null): Seitenstand | null {
+  if (!a) return b;
+  if (!b) return a;
+  return {
+    stellungen: a.stellungen + b.stellungen,
+    gelernt: a.gelernt + b.gelernt,
+    sicher: a.sicher + b.sicher,
+  };
+}
+
+const prozent = (teil: number, ganz: number) => (ganz === 0 ? 0 : Math.round((teil / ganz) * 100));
+
+function Pille({ farbe, text }: { farbe: string; text: string }) {
   return (
-    <View style={stile.verteilung}>
-      <View style={stile.verteilungBalken}>
-        {teile.map((t) => (
-          <View
-            key={t.text}
-            style={[stile.verteilungTeil, { flex: t.wert, backgroundColor: t.farbe }]}
-          >
-            {t.farbe === FARBEN.akzent && <Verlauf />}
-          </View>
-        ))}
-      </View>
-      <View style={stile.legende}>
-        {teile.map((t) => (
-          <View key={t.text} style={stile.legendeTeil}>
-            <View style={[stile.legendePunkt, { backgroundColor: t.farbe }]} />
-            <Text style={stile.leise}>
-              {t.wert} {t.text}
-            </Text>
-          </View>
-        ))}
+    <View style={stile.pille}>
+      <View style={[stile.pillePunkt, { backgroundColor: farbe }]} />
+      <Text style={stile.pilleText}>{text}</Text>
+    </View>
+  );
+}
+
+const RING = { groesse: 92, strich: 9 };
+
+/** Ring wie der Lernbalken: hell = gelernt, kräftig = sicher. In der Mitte der Anteil gelernt. */
+function LernRing({ stand }: { stand: Seitenstand }) {
+  const r = (RING.groesse - RING.strich) / 2;
+  const mitte = RING.groesse / 2;
+  const umfang = 2 * Math.PI * r;
+  const gelernt = prozent(stand.gelernt, stand.stellungen);
+  const sicher = prozent(stand.sicher, stand.stellungen);
+  const bogen = (anteil: number, farbe: string) =>
+    anteil > 0 && (
+      <Circle
+        cx={mitte}
+        cy={mitte}
+        r={r}
+        fill="none"
+        stroke={farbe}
+        strokeWidth={RING.strich}
+        strokeLinecap="round"
+        strokeDasharray={`${(umfang * anteil) / 100} ${umfang}`}
+        transform={`rotate(-90 ${mitte} ${mitte})`}
+      />
+    );
+  return (
+    <View
+      style={stile.ring}
+      accessible
+      accessibilityLabel={`${stand.gelernt} von ${stand.stellungen} Zügen gelernt, ${stand.sicher} sicher`}
+    >
+      <Svg width={RING.groesse} height={RING.groesse}>
+        <Defs>
+          <LinearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={FARBEN.akzent} />
+            <Stop offset="1" stopColor={FARBEN.akzentHell} />
+          </LinearGradient>
+        </Defs>
+        <Circle
+          cx={mitte}
+          cy={mitte}
+          r={r}
+          fill="none"
+          stroke={FARBEN.karteHell}
+          strokeWidth={RING.strich}
+        />
+        {bogen(gelernt, FARBEN.gelernt)}
+        {bogen(sicher, 'url(#ring)')}
+      </Svg>
+      <View style={stile.ringMitte}>
+        <Text style={[stile.ringZahl, ZIFFERN_GLEICH]} maxFontSizeMultiplier={1.2}>
+          {gelernt} %
+        </Text>
+        <Text style={stile.ringText} maxFontSizeMultiplier={1.2}>
+          gelernt
+        </Text>
       </View>
     </View>
   );
 }
 
-function Seitenzeile({ seite, prozent }: { seite: 'weiss' | 'schwarz'; prozent: number | null }) {
+function Woche({ woche, wochentag }: { woche: boolean[]; wochentag: number }) {
+  const geuebt = woche.filter(Boolean).length;
+  return (
+    <View
+      style={[KARTE, stile.woche]}
+      accessible
+      accessibilityLabel={`Diese Woche an ${geuebt} von ${wochentag + 1} Tagen geübt: ${woche
+        .map((g, i) => (g ? WOCHENTAGE_LANG[i] : null))
+        .filter(Boolean)
+        .join(', ')}`}
+    >
+      {WOCHENTAGE.map((tag, i) => {
+        const heute = i === wochentag;
+        const geuebtAnTag = woche[i];
+        return (
+          <View key={i} style={stile.tag}>
+            <Text style={[stile.tagName, heute && { color: FARBEN.text }]}>{tag}</Text>
+            <View
+              style={[
+                stile.tagKreis,
+                heute && !geuebtAnTag && stile.tagHeute,
+                i > wochentag && stile.tagSpaeter,
+              ]}
+            >
+              {geuebtAnTag && (
+                <>
+                  <Verlauf schraeg />
+                  <Zeichen name="haken" farbe={FARBEN.textAufAkzent} groesse={16} />
+                </>
+              )}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function Seitenkarte({ seite, stand }: { seite: Seite; stand: Seitenstand | null }) {
   const name = seite === 'weiss' ? 'Weiß' : 'Schwarz';
   return (
     <View
-      style={stile.seitenzeile}
+      style={[KARTE, stile.seitenkarte]}
       accessible
-      accessibilityLabel={`${name}: ${prozent === null ? 'noch nichts' : `${prozent} Prozent sicher`}`}
+      accessibilityLabel={
+        stand
+          ? `${name}: ${stand.gelernt} von ${stand.stellungen} gelernt, ${stand.sicher} sicher`
+          : `${name}: noch keine Eröffnung`
+      }
     >
-      <Seitenpunkt seite={seite} groesse={12} />
-      <Text style={stile.seitenName}>{name}</Text>
-      <View style={stile.seitenBalken}>
-        <Balken anteil={(prozent ?? 0) / 100} />
+      <View style={stile.seitenKopf}>
+        <Seitenpunkt seite={seite} groesse={11} />
+        <Text style={stile.seitenName} numberOfLines={1}>
+          {name}
+        </Text>
+        <Text style={[stile.seitenWert, ZIFFERN_GLEICH, !stand && { color: FARBEN.textLeise }]}>
+          {stand ? `${prozent(stand.gelernt, stand.stellungen)} %` : '–'}
+        </Text>
       </View>
-      <Text style={[stile.seitenWert, prozent === null && { color: FARBEN.textLeise }]}>
-        {prozent === null ? '–' : `${prozent} %`}
+      <Lernbalken
+        stellungen={stand?.stellungen ?? 0}
+        gelernt={stand?.gelernt ?? 0}
+        sicher={stand?.sicher ?? 0}
+        hoehe={5}
+      />
+      <Text style={stile.seitenUnter} numberOfLines={1} adjustsFontSizeToFit>
+        {stand ? `${stand.gelernt} von ${stand.stellungen} gelernt` : 'noch nichts'}
       </Text>
     </View>
   );
@@ -216,65 +353,101 @@ const stile = StyleSheet.create({
     marginBottom: 4,
   },
   serieText: { color: FARBEN.text, fontSize: 14, fontWeight: '700' },
-  zahlZeile: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 8 },
+  haupt: { padding: 20, gap: 16, marginTop: 4 },
+  hauptVerlauf: { ...StyleSheet.absoluteFill, borderRadius: RUNDUNG, overflow: 'hidden' },
+  lichtkante: {
+    position: 'absolute',
+    top: 0,
+    left: RUNDUNG,
+    right: RUNDUNG,
+    height: 1,
+    backgroundColor: FARBEN.lichtkante,
+  },
+  hauptZeile: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  hauptLinks: { flex: 1 },
+  marke: { color: FARBEN.akzentHell, fontSize: 12, fontWeight: '700', letterSpacing: 1.3 },
   zahl: {
     color: FARBEN.text,
-    fontSize: 96,
-    lineHeight: 104,
+    fontSize: 64,
+    lineHeight: 72,
     fontWeight: '800',
-    letterSpacing: -4,
+    letterSpacing: -2.5,
+    marginTop: 2,
   },
   geschafft: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: 'rgba(61, 214, 140, 0.14)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 4,
+    marginVertical: 8,
   },
-  zahlTitel: { color: FARBEN.text, fontSize: 24, fontWeight: '700', letterSpacing: -0.4 },
-  zahlUnter: { color: FARBEN.textLeise, fontSize: 24, letterSpacing: -0.4 },
-  verteilung: { marginTop: 14, marginBottom: 24, gap: 12 },
-  verteilungLeer: { height: 24 },
-  verteilungBalken: { flexDirection: 'row', gap: 4, height: 8 },
-  verteilungTeil: { borderRadius: 4, overflow: 'hidden' },
-  legende: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 18, rowGap: 6 },
-  legendeTeil: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  legendePunkt: { width: 8, height: 8, borderRadius: 4 },
-  leer: { gap: 6, paddingTop: 8 },
+  zahlUnter: { color: FARBEN.textLeise, fontSize: 16 },
+  ring: { width: RING.groesse, height: RING.groesse },
+  ringMitte: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
+  ringZahl: { color: FARBEN.text, fontSize: 17, fontWeight: '800' },
+  ringText: { color: FARBEN.textLeise, fontSize: 11 },
+  pillen: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pille: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 14,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+  },
+  pillePunkt: { width: 7, height: 7, borderRadius: 3.5 },
+  pilleText: { color: FARBEN.text, fontSize: 13, fontWeight: '600' },
+  leer: { gap: 6, padding: 20, marginTop: 4 },
   leerTitel: { color: FARBEN.text, fontSize: 22, fontWeight: '700' },
   leerText: { color: FARBEN.textLeise, fontSize: 15, lineHeight: 22, marginBottom: 18 },
-  // Etwas Luft oben und unten für die helle Fläche beim Drücken, ohne das Layout zu verschieben.
   weiter: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    paddingVertical: 10,
-    marginVertical: -10,
+    padding: 12,
+    paddingRight: 14,
+    borderRadius: 18,
   },
   miniBrett: { borderRadius: 10, overflow: 'hidden' },
   weiterText: { flex: 1, gap: 4 },
   weiterName: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
   weiterKnopf: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: FARBEN.karteHell,
     alignItems: 'center',
     justifyContent: 'center',
   },
   leise: { color: FARBEN.textLeise, fontSize: 14 },
-  akzent: { color: FARBEN.akzent, fontWeight: '700' },
-  seitenzeile: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  seitenName: { color: FARBEN.text, fontSize: 16, width: 72 },
-  seitenBalken: { flex: 1 },
-  seitenWert: {
-    color: FARBEN.text,
-    fontSize: 16,
-    fontWeight: '700',
-    width: 52,
-    textAlign: 'right',
+  akzent: { color: FARBEN.akzentHell, fontWeight: '700' },
+  woche: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 18,
   },
-  trenner: { height: 1, backgroundColor: FARBEN.rand },
+  tag: { alignItems: 'center', gap: 8, flex: 1 },
+  tagName: { color: FARBEN.textLeise, fontSize: 12, fontWeight: '600' },
+  tagKreis: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: FARBEN.karteHell,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  tagHeute: { borderWidth: 2, borderColor: FARBEN.akzent, backgroundColor: 'transparent' },
+  tagSpaeter: { opacity: 0.5 },
+  seiten: { flexDirection: 'row', gap: 12 },
+  seitenkarte: { flex: 1, padding: 14, gap: 10, borderRadius: 18 },
+  seitenKopf: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  seitenName: { flex: 1, color: FARBEN.text, fontSize: 15, fontWeight: '600' },
+  seitenWert: { color: FARBEN.text, fontSize: 15, fontWeight: '800' },
+  seitenUnter: { color: FARBEN.textLeise, fontSize: 12.5 },
 });

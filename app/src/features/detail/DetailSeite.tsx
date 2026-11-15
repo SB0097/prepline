@@ -9,16 +9,27 @@ import { einstellungenLaden } from '@/daten/einstellungen';
 import { repertoireDetail, repertoireLoeschen, repertoireUmbenennen } from '@/daten/speicher';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
-import { Abschnitt, Knopf, RundKnopf, zurueck, Zeilenknopf, ZurueckKopf } from '@/ui/bausteine';
+import {
+  Abschnitt,
+  KARTE,
+  Knopf,
+  Lernbalken,
+  RundKnopf,
+  TIEFE,
+  zurueck,
+  Zeilenknopf,
+  ZurueckKopf,
+} from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { BestaetigenDialog, EingabeDialog, Menue } from '@/ui/Dialog';
 import { FARBEN } from '@/ui/farben';
 import { Zeichen } from '@/ui/symbole';
-import { Text } from '@/ui/Text';
+import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
-// Detailseite einer Eröffnung (Inhalt nach Skizze D1, Layout „Ruhig & groß“ 14.11.2026):
-// großer Titel, großes Brett, Zahlen ohne Kasten, „Nur diese trainieren“, Linien als Liste;
-// Menü ⋯ mit Umbenennen und Löschen. Eine Linie antippen öffnet den Zug-Browser (Skizze D2).
+// Detailseite einer Eröffnung (Inhalt nach Skizze D1, Runde 16 „Tiefe“ 15.11.2026):
+// großer Titel, Brett im Rahmen, Karte mit Zahlen und Lernbalken, „Nur diese trainieren“,
+// Linien in einer Karte; Menü ⋯ mit Umbenennen und Löschen. Eine Linie antippen öffnet den
+// Zug-Browser (Skizze D2).
 export function DetailSeite() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const repId = Number(id);
@@ -49,7 +60,7 @@ export function DetailSeite() {
     );
   }
   const name = neuerName ?? rep.name;
-  const { stellungen, faellig, neu, sicher } = rep.fortschritt;
+  const { stellungen, faellig, neu, gelernt, sicher } = rep.fortschritt;
   const linien = linienAusBaum(rep.baum);
   const unter = [
     rep.seite === 'weiss' ? 'Weiß' : 'Schwarz',
@@ -71,21 +82,35 @@ export function DetailSeite() {
             />
           }
         />
-        <Schachbrett
-          fen={rep.endFen}
-          groesse={breite - 40}
-          rundung={16}
-          ansicht={rep.seite}
-          figurensatz={figurensatz}
-          bedienbar={false}
-        />
-        <View style={stile.zahlen}>
-          <Zahl wert={String(stellungen)} titel="Stellungen" />
-          <Zahl wert={String(faellig)} titel="fällig" akzent={faellig > 0} />
-          <Zahl
-            wert={stellungen ? `${Math.round((sicher / stellungen) * 100)} %` : '–'}
-            titel="sicher"
+        <View style={stile.rahmen}>
+          <Schachbrett
+            fen={rep.endFen}
+            groesse={breite - 2 * (20 + RAHMEN)}
+            rundung={14}
+            ansicht={rep.seite}
+            figurensatz={figurensatz}
+            bedienbar={false}
           />
+        </View>
+        <View style={[KARTE, stile.zahlenKarte]}>
+          <View style={stile.zahlen}>
+            <Zahl wert={String(stellungen)} titel="Stellungen" />
+            <View style={stile.teiler} />
+            <Zahl
+              wert={String(faellig)}
+              titel="fällig"
+              farbe={faellig > 0 ? FARBEN.hinweis : undefined}
+            />
+            <View style={stile.teiler} />
+            <Zahl
+              wert={stellungen ? `${Math.round((gelernt / stellungen) * 100)} %` : '–'}
+              titel="gelernt"
+            />
+          </View>
+          <Lernbalken stellungen={stellungen} gelernt={gelernt} sicher={sicher} hoehe={6} />
+          <Text style={stile.leiseKlein}>
+            {gelernt} von {stellungen} gelernt · {sicher} sicher
+          </Text>
         </View>
         <Knopf
           titel={faellig + neu > 0 ? 'Nur diese trainieren' : 'Alles gelernt'}
@@ -94,30 +119,35 @@ export function DetailSeite() {
           onPress={() => router.push({ pathname: '/training', params: { id: String(rep.id) } })}
         />
         <Abschnitt titel={`Linien · ${linien.length}`} />
-        {linien.map((linie, i) => (
-          <Zeilenknopf
-            key={i}
-            onPress={() =>
-              router.push({
-                pathname: '/eroeffnung/[id]/zuege',
-                params: { id: String(rep.id), linie: String(i) },
-              })
-            }
-            accessibilityRole="button"
-          >
-            <View style={[stile.linie, i < linien.length - 1 && stile.trenner]}>
-              <View style={stile.linieText}>
-                <Text style={stile.linieZuege} numberOfLines={1}>
-                  {linienKurztext(rep.baum, linie)}
-                </Text>
-                <Text style={stile.leiseKlein}>
-                  {i === 0 ? 'Hauptlinie' : 'Variante'} · {linie.knoten.length} Züge
-                </Text>
+        <View style={[KARTE, stile.linien]}>
+          {linien.map((linie, i) => (
+            <Zeilenknopf
+              key={i}
+              einzug={16}
+              flaeche={FARBEN.karteHell}
+              rund={0}
+              onPress={() =>
+                router.push({
+                  pathname: '/eroeffnung/[id]/zuege',
+                  params: { id: String(rep.id), linie: String(i) },
+                })
+              }
+              accessibilityRole="button"
+            >
+              <View style={[stile.linie, i < linien.length - 1 && stile.trenner]}>
+                <View style={stile.linieText}>
+                  <Text style={stile.linieZuege} numberOfLines={1}>
+                    {linienKurztext(rep.baum, linie)}
+                  </Text>
+                  <Text style={stile.leiseKlein}>
+                    {i === 0 ? 'Hauptlinie' : 'Variante'} · {linie.knoten.length} Züge
+                  </Text>
+                </View>
+                <Zeichen name="weiter" farbe={FARBEN.textLeise} groesse={18} />
               </View>
-              <Zeichen name="weiter" farbe={FARBEN.textLeise} groesse={18} />
-            </View>
-          </Zeilenknopf>
-        ))}
+            </Zeilenknopf>
+          ))}
+        </View>
       </ScrollView>
 
       <Menue
@@ -156,10 +186,15 @@ export function DetailSeite() {
   );
 }
 
-function Zahl({ wert, titel, akzent = false }: { wert: string; titel: string; akzent?: boolean }) {
+/** Innenabstand des Rahmens um das Brett. */
+const RAHMEN = 6;
+
+function Zahl({ wert, titel, farbe }: { wert: string; titel: string; farbe?: string | undefined }) {
   return (
     <View style={stile.zahl}>
-      <Text style={[stile.zahlWert, akzent && { color: FARBEN.akzent }]}>{wert}</Text>
+      <Text style={[stile.zahlWert, ZIFFERN_GLEICH, farbe !== undefined && { color: farbe }]}>
+        {wert}
+      </Text>
       <Text style={stile.leiseKlein} numberOfLines={1} adjustsFontSizeToFit>
         {titel}
       </Text>
@@ -171,9 +206,21 @@ const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
   rand: { paddingHorizontal: 20 },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32 },
-  zahlen: { flexDirection: 'row', columnGap: 12, marginTop: 22, marginBottom: 22 },
-  zahl: { flex: 1, gap: 2 },
-  zahlWert: { color: FARBEN.text, fontSize: 26, fontWeight: '700', letterSpacing: -0.4 },
+  rahmen: {
+    alignSelf: 'center',
+    padding: RAHMEN,
+    borderRadius: 20,
+    backgroundColor: FARBEN.karteHell,
+    borderWidth: 1,
+    borderColor: FARBEN.lichtkante,
+    ...TIEFE,
+  },
+  zahlenKarte: { marginTop: 18, marginBottom: 20, padding: 16, gap: 12, borderRadius: 18 },
+  zahlen: { flexDirection: 'row', alignItems: 'center' },
+  zahl: { flex: 1, alignItems: 'center', gap: 2, paddingHorizontal: 4 },
+  teiler: { width: 1, alignSelf: 'stretch', backgroundColor: FARBEN.rand },
+  zahlWert: { color: FARBEN.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.4 },
+  linien: { paddingHorizontal: 16, overflow: 'hidden', borderRadius: 18 },
   linie: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
   trenner: { borderBottomWidth: 1, borderBottomColor: FARBEN.rand },
   linieText: { flex: 1, gap: 4 },
