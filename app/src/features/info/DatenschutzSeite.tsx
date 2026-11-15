@@ -1,9 +1,9 @@
-import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
 import { CoachBauer } from '@/ui/CoachBauer';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen } from '@/ui/thema';
 import { Text } from '@/ui/Text';
 
 // Datenschutz in der App (Skizze M8, Serkan 11.11.2026). Die vollständige Erklärung liegt
@@ -23,6 +23,7 @@ const PUNKTE = [
 ] as const;
 
 export function DatenschutzSeite() {
+  const stile = useStile();
   return (
     <SafeAreaView style={stile.seite}>
       <View style={stile.rand}>
@@ -65,21 +66,21 @@ export function DatenschutzSeite() {
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund },
   rand: { paddingHorizontal: 20 },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32, gap: 18 },
   kurz: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: FARBEN.karte,
+    backgroundColor: F.karte,
     borderRadius: RUNDUNG,
     padding: 16,
   },
   kurzText: { flex: 1, gap: 4 },
-  kurzTitel: { color: FARBEN.text, fontSize: 16, fontWeight: '700' },
-  text: { color: FARBEN.text, fontSize: 14, lineHeight: 20 },
+  kurzTitel: { color: F.text, fontSize: 16, fontWeight: '700' },
+  text: { color: F.text, fontSize: 14, lineHeight: 20 },
   punkt: { flexDirection: 'row', gap: 12 },
   kreis: {
     width: 20,
@@ -90,10 +91,10 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  innen: { width: 8, height: 8, borderRadius: 4, backgroundColor: FARBEN.richtig },
+  innen: { width: 8, height: 8, borderRadius: 4, backgroundColor: F.richtig },
   punktText: { flex: 1, gap: 3 },
-  punktTitel: { color: FARBEN.text, fontSize: 15, fontWeight: '700' },
-  leise: { color: FARBEN.textLeise, fontSize: 13, lineHeight: 19 },
+  punktTitel: { color: F.text, fontSize: 15, fontWeight: '700' },
+  leise: { color: F.textLeise, fontSize: 13, lineHeight: 19 },
   abstand: { marginTop: 8, marginBottom: -12 },
-  link: { color: FARBEN.akzent, fontSize: 14 },
-});
+  link: { color: F.akzent, fontSize: 14 },
+}));

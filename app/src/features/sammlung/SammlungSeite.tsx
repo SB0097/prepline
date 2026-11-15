@@ -10,7 +10,7 @@ import {
 } from '@prepline/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -18,10 +18,10 @@ import { einstellungenLaden } from '@/daten/einstellungen';
 import { sammlungImRepertoire } from '@/daten/sammlung';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
-import { Abschnitt, TIEFE, ZurueckKopf } from '@/ui/bausteine';
+import { Abschnitt, tiefe, ZurueckKopf } from '@/ui/bausteine';
 import type { Figurensatz } from '@/ui/brett/figuren';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen, useFarben } from '@/ui/thema';
 import { STUFE_TEXT } from '@/ui/stufen';
 import { Text } from '@/ui/Text';
 
@@ -38,6 +38,7 @@ async function laden(sql: Sql) {
 }
 
 export function SammlungSeite() {
+  const stile = useStile();
   const daten = useGeladen(laden);
   const [filter, setFilter] = useState<Stufe | null>(null);
   const sichtbar = SAMMLUNG.filter((e) => filter === null || e.stufe === filter);
@@ -99,6 +100,7 @@ function Filterknopf({
   aktiv: boolean;
   onPress: () => void;
 }) {
+  const stile = useStile();
   return (
     <Pressable
       onPress={onPress}
@@ -120,6 +122,8 @@ function Eintrag({
   drin: boolean;
   figurensatz: Figurensatz;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   const baum = sammlungsBaum(eintrag);
   const stellungen = kartenAusBaum(baum, eintrag.seite).length;
   return (
@@ -146,12 +150,12 @@ function Eintrag({
         </Text>
         <Stufenetikett stufe={eintrag.stufe} />
       </View>
-      <View style={[stile.zeichen, drin ? stile.zeichenDrin : { backgroundColor: FARBEN.akzent }]}>
+      <View style={[stile.zeichen, drin ? stile.zeichenDrin : { backgroundColor: F.akzent }]}>
         <Svg width={18} height={18} viewBox="0 0 24 24">
           <Path
             d={drin ? 'M5 12.5l4.5 4.5L19 7.5' : 'M12 5v14M5 12h14'}
             fill="none"
-            stroke={drin ? FARBEN.richtig : FARBEN.textAufAkzent}
+            stroke={drin ? F.richtig : F.textAufAkzent}
             strokeWidth={2.8}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -162,36 +166,36 @@ function Eintrag({
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund },
   rand: { paddingHorizontal: 20 },
   filterLeiste: { flexGrow: 0 },
   filter: { gap: 6, paddingHorizontal: 20, paddingVertical: 4 },
   chip: {
-    backgroundColor: FARBEN.karte,
-    ...TIEFE,
+    backgroundColor: F.karte,
+    ...tiefe(F),
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
-  chipAktiv: { backgroundColor: FARBEN.akzent },
-  chipText: { color: FARBEN.text, fontSize: 13 },
-  chipTextAktiv: { color: FARBEN.textAufAkzent, fontWeight: '700' },
+  chipAktiv: { backgroundColor: F.akzent },
+  chipText: { color: F.text, fontSize: 13 },
+  chipTextAktiv: { color: F.textAufAkzent, fontWeight: '700' },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32 },
   liste: { gap: 8 },
   eintrag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: FARBEN.karte,
-    ...TIEFE,
+    backgroundColor: F.karte,
+    ...tiefe(F),
     borderRadius: 20,
     padding: 10,
   },
   brett: { borderRadius: 8, overflow: 'hidden' },
   text: { flex: 1, gap: 3, alignItems: 'flex-start' },
-  name: { color: FARBEN.text, fontSize: 16, fontWeight: '700' },
-  leise: { color: FARBEN.textLeise, fontSize: 12 },
+  name: { color: F.text, fontSize: 16, fontWeight: '700' },
+  leise: { color: F.textLeise, fontSize: 12 },
   zeichen: {
     width: 32,
     height: 32,
@@ -200,4 +204,4 @@ const stile = StyleSheet.create({
     justifyContent: 'center',
   },
   zeichenDrin: { backgroundColor: 'rgba(61, 214, 140, 0.16)' },
-});
+}));

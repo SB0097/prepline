@@ -16,7 +16,8 @@ import Animated, { useReducedMotion } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { CSS_AUSKLINGEN, DAUER } from './bewegung';
-import { FARBEN } from './farben';
+import type { Farben } from './farben';
+import { stileErstellen, useFarben } from './thema';
 import { type Symbolname, Zeichen } from './symbole';
 import { Text } from './Text';
 
@@ -67,12 +68,12 @@ export function Federnd({
 /**
  * Listenzeile zum Antippen (Runde 15): beim Drücken leicht hell hinterlegt statt zu federn.
  * Die Fläche reicht `einzug` über den Inhalt hinaus, der Inhalt bleibt an seinem Platz.
- * Auf Karten: `einzug` = Innenabstand der Karte, `flaeche` = FARBEN.karteHell, `rund` = 0
+ * Auf Karten: `einzug` = Innenabstand der Karte, `flaeche` = F.karteHell, `rund` = 0
  * und die Karte braucht `overflow: 'hidden'`.
  */
 export function Zeilenknopf({
   einzug = 12,
-  flaeche = FARBEN.karte,
+  flaeche,
   rund = 14,
   style,
   ...rest
@@ -82,12 +83,13 @@ export function Zeilenknopf({
   rund?: number;
   style?: StyleProp<ViewStyle>;
 }) {
+  const F = useFarben();
   return (
     <Pressable
       {...rest}
       style={({ pressed }) => [
         { marginHorizontal: -einzug, paddingHorizontal: einzug, borderRadius: rund },
-        pressed && { backgroundColor: flaeche },
+        pressed && { backgroundColor: flaeche ?? F.karte },
         style,
       ]}
     />
@@ -102,27 +104,32 @@ const RUND_AKZENT = 44;
 const RUND_LEISE = 40;
 
 /** Weicher Schatten unter Karten und eine feine Lichtkante oben (Runde 16 „Tiefe“). */
-export const TIEFE = {
-  boxShadow: `0px 8px 20px ${FARBEN.schatten}, inset 0px 1px 0px ${FARBEN.lichtkante}`,
-} as const;
+export function tiefe(F: Farben) {
+  return { boxShadow: `0px 8px 20px ${F.schatten}, inset 0px 1px 0px ${F.lichtkante}` } as const;
+}
 
 /** Grundform einer Karte: Fläche mit feinem Rand, Schatten und Lichtkante. */
-export const KARTE = {
-  backgroundColor: FARBEN.karte,
-  borderRadius: RUNDUNG,
-  borderWidth: 1,
-  borderColor: FARBEN.rand,
-  ...TIEFE,
-} as const;
+export function karte(F: Farben) {
+  return {
+    backgroundColor: F.karte,
+    borderRadius: RUNDUNG,
+    borderWidth: 1,
+    borderColor: F.rand,
+    ...tiefe(F),
+  } as const;
+}
+
+/** Karte für das aktuelle Farbschema, z. B. `style={[useKarte(), …]}`. */
+export const useKarte = stileErstellen((F) => ({ karte: karte(F) }));
 
 /**
  * Sanftes Leuchten oben auf einer Hauptseite. Liegt hinter dem Inhalt und scrollt mit,
- * deshalb als erstes Kind in den Inhalt der ScrollView legen.
+ * deshalb als erstes Kind in den Inhalt der ScrollView legen. Die Deckkraft steht im
+ * Farbschema (`glanz`), weil SVG-Verläufe sie getrennt von der Farbe brauchen.
  */
-/** Deckkraft des Leuchtens in der Mitte; SVG-Verläufe brauchen sie getrennt von der Farbe. */
-const GLANZ_STAERKE = 0.14;
-
 export function Glanz() {
+  const F = useFarben();
+  const stile = useStile();
   const breite = useWindowDimensions().width;
   const hoehe = 460;
   return (
@@ -130,8 +137,8 @@ export function Glanz() {
       <Svg width={breite} height={hoehe}>
         <Defs>
           <RadialGradient id="glanz" cx="50%" cy="22%" rx="75%" ry="60%">
-            <Stop offset="0" stopColor={FARBEN.akzent} stopOpacity={GLANZ_STAERKE} />
-            <Stop offset="1" stopColor={FARBEN.hintergrund} stopOpacity={0} />
+            <Stop offset="0" stopColor={F.akzent} stopOpacity={F.glanz} />
+            <Stop offset="1" stopColor={F.hintergrund} stopOpacity={0} />
           </RadialGradient>
         </Defs>
         <Rect width={breite} height={hoehe} fill="url(#glanz)" />
@@ -154,14 +161,15 @@ export function zurueck(): void {
 export function Verlauf({
   schraeg = false,
   senkrecht = false,
-  von = FARBEN.akzent,
-  bis = FARBEN.akzentHell,
+  von,
+  bis,
 }: {
   schraeg?: boolean;
   senkrecht?: boolean;
   von?: string;
   bis?: string;
 }) {
+  const F = useFarben();
   const [flaeche, setFlaeche] = useState({ breite: 0, hoehe: 0 });
   return (
     <View
@@ -181,8 +189,8 @@ export function Verlauf({
               x2={senkrecht ? '0' : '1'}
               y2={schraeg || senkrecht ? '1' : '0'}
             >
-              <Stop offset="0" stopColor={von} />
-              <Stop offset="1" stopColor={bis} />
+              <Stop offset="0" stopColor={von ?? F.akzent} />
+              <Stop offset="1" stopColor={bis ?? F.akzentHell} />
             </LinearGradient>
           </Defs>
           <Rect width={flaeche.breite} height={flaeche.hoehe} fill="url(#verlauf)" />
@@ -205,6 +213,8 @@ export function Knopf({
   aus?: boolean;
   symbol?: Symbolname;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   return (
     <Federnd
       onPress={onPress}
@@ -216,13 +226,9 @@ export function Knopf({
         aus && { opacity: 0.4 },
       ]}
     >
-      {art === 'voll' && <Verlauf von={FARBEN.knopfVon} bis={FARBEN.knopfBis} />}
+      {art === 'voll' && <Verlauf von={F.knopfVon} bis={F.knopfBis} />}
       {symbol && (
-        <Zeichen
-          name={symbol}
-          farbe={art === 'voll' ? FARBEN.textAufKnopf : FARBEN.text}
-          groesse={20}
-        />
+        <Zeichen name={symbol} farbe={art === 'voll' ? F.textAufKnopf : F.text} groesse={20} />
       )}
       {/* Bei großer Systemschrift wird die Beschriftung kleiner statt abgeschnitten. */}
       <Text
@@ -258,6 +264,8 @@ export function RundKnopf({
   /** Gerade nicht möglich: blass und nicht antippbar. */
   aus?: boolean;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   // Sichtbar bleibt der Kreis (40/44 dp), antippbar sind immer 48 dp (Android-Mindestmaß).
   // Der negative Rand gleicht die größere Fläche aus, das Layout bleibt gleich.
   const kreis = art === 'akzent' ? RUND_AKZENT : RUND_LEISE;
@@ -283,10 +291,10 @@ export function RundKnopf({
           gedrueckt && (art === 'leise' ? stile.rundLeiseGedrueckt : { opacity: 0.85 }),
         ]}
       >
-        {art === 'akzent' && <Verlauf schraeg von={FARBEN.knopfVon} bis={FARBEN.knopfBis} />}
+        {art === 'akzent' && <Verlauf schraeg von={F.knopfVon} bis={F.knopfBis} />}
         <Zeichen
           name={symbol}
-          farbe={art === 'akzent' ? FARBEN.textAufKnopf : FARBEN.text}
+          farbe={art === 'akzent' ? F.textAufKnopf : F.text}
           groesse={art === 'akzent' ? 22 : 20}
         />
       </View>
@@ -308,6 +316,7 @@ export function Balken({
   /** Feste Farbe statt Verlauf, z. B. Grün für „alles gut“. */
   farbe?: string;
 }) {
+  const stile = useStile();
   const [breite, setBreite] = useState(0);
   const teil = Math.max(0, Math.min(1, anteil));
   const rund = { height: hoehe, borderRadius: hoehe / 2 };
@@ -357,6 +366,8 @@ export function Lernbalken({
   sicher: number;
   hoehe?: number;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   const anteil = (n: number) => (stellungen === 0 ? 0 : Math.max(0, Math.min(1, n / stellungen)));
   const rund = { height: hoehe, borderRadius: hoehe / 2 };
   return (
@@ -370,7 +381,7 @@ export function Lernbalken({
           style={[
             stile.lernTeil,
             rund,
-            { width: `${anteil(gelernt) * 100}%`, backgroundColor: FARBEN.gelernt },
+            { width: `${anteil(gelernt) * 100}%`, backgroundColor: F.gelernt },
           ]}
         />
       )}
@@ -391,6 +402,7 @@ export function Seitenpunkt({
   seite: 'weiss' | 'schwarz';
   groesse?: number;
 }) {
+  const F = useFarben();
   return (
     <View
       style={{
@@ -398,8 +410,9 @@ export function Seitenpunkt({
         height: groesse,
         borderRadius: groesse / 2,
         backgroundColor: seite === 'weiss' ? '#FFFFFF' : '#0A0A0A',
-        borderWidth: seite === 'weiss' ? 0 : 1.5,
-        borderColor: FARBEN.textLeise,
+        // Im Dunklen braucht der weiße Punkt keinen Rand, im Hellen schon.
+        borderWidth: seite === 'weiss' && F.dunkel ? 0 : 1.5,
+        borderColor: seite === 'weiss' ? F.punktRand : F.textLeise,
       }}
     />
   );
@@ -419,6 +432,7 @@ export function Umschalter<T extends string>({
   wert: T;
   onWahl: (wert: T) => void;
 }) {
+  const stile = useStile();
   return (
     <View style={stile.umschalter} accessibilityRole="tablist">
       {werte.map((w) => {
@@ -458,6 +472,7 @@ export function SeitenTitel({
   oben?: string;
   rechts?: ReactNode;
 }) {
+  const stile = useStile();
   return (
     <View style={stile.titelZeile}>
       <View>
@@ -484,6 +499,7 @@ export function ZurueckKopf({
   unter?: string | undefined;
   rechts?: ReactNode;
 }) {
+  const stile = useStile();
   return (
     <View style={stile.unterKopf}>
       <View style={stile.unterLeiste}>
@@ -501,21 +517,22 @@ export function ZurueckKopf({
 }
 
 export function Abschnitt({ titel }: { titel: string }) {
+  const stile = useStile();
   return <Text style={stile.abschnitt}>{titel.toUpperCase()}</Text>;
 }
 
-const stile = StyleSheet.create({
+const useStile = stileErstellen((F) => ({
   knopfVoll: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: FARBEN.knopfVon,
+    backgroundColor: F.knopfVon,
     borderRadius: 29,
     paddingVertical: 17,
     paddingHorizontal: 18,
     overflow: 'hidden',
-    boxShadow: `0px 8px 22px ${FARBEN.knopfLeuchten}`,
+    boxShadow: `0px 8px 22px ${F.knopfLeuchten}`,
   },
   knopfLeise: {
     flexDirection: 'row',
@@ -531,14 +548,14 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     borderWidth: 2,
-    borderColor: FARBEN.linie,
+    borderColor: F.linie,
     borderRadius: 29,
     paddingVertical: 15,
     paddingHorizontal: 18,
   },
-  knopfTextRahmen: { color: FARBEN.text, fontSize: 16, fontWeight: '600' },
-  knopfTextVoll: { color: FARBEN.textAufKnopf, fontSize: 18, fontWeight: '700' },
-  knopfTextLeise: { color: FARBEN.akzent, fontSize: 16, fontWeight: '600' },
+  knopfTextRahmen: { color: F.text, fontSize: 16, fontWeight: '600' },
+  knopfTextVoll: { color: F.textAufKnopf, fontSize: 18, fontWeight: '700' },
+  knopfTextLeise: { color: F.akzent, fontSize: 16, fontWeight: '600' },
   rundFlaeche: {
     width: TIPPFLAECHE,
     height: TIPPFLAECHE,
@@ -552,27 +569,27 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: FARBEN.knopfVon,
-    boxShadow: `0px 6px 16px ${FARBEN.knopfLeuchten}`,
+    backgroundColor: F.knopfVon,
+    boxShadow: `0px 6px 16px ${F.knopfLeuchten}`,
   },
   rundLeise: {
     width: RUND_LEISE,
     height: RUND_LEISE,
     borderRadius: RUND_LEISE / 2,
-    backgroundColor: FARBEN.karte,
+    backgroundColor: F.karte,
     borderWidth: 1,
-    borderColor: FARBEN.rand,
-    boxShadow: `inset 0px 1px 0px ${FARBEN.lichtkante}`,
+    borderColor: F.rand,
+    boxShadow: `inset 0px 1px 0px ${F.lichtkante}`,
   },
-  rundLeiseGedrueckt: { backgroundColor: FARBEN.linie, borderColor: FARBEN.linie },
-  balken: { backgroundColor: FARBEN.karteHell, overflow: 'hidden' },
+  rundLeiseGedrueckt: { backgroundColor: F.linie, borderColor: F.linie },
+  balken: { backgroundColor: F.karteHell, overflow: 'hidden' },
   lernTeil: { position: 'absolute', left: 0, top: 0, overflow: 'hidden' },
   glanz: { position: 'absolute', top: 0, left: 0 },
-  balkenVoll: { backgroundColor: FARBEN.akzent, overflow: 'hidden' },
+  balkenVoll: { backgroundColor: F.akzent, overflow: 'hidden' },
   umschalter: {
     flexDirection: 'row',
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.rand,
+    backgroundColor: F.karte,
+    borderColor: F.rand,
     borderWidth: 1,
     borderRadius: 25,
     padding: 4,
@@ -588,14 +605,14 @@ const stile = StyleSheet.create({
     paddingVertical: 6,
     overflow: 'hidden',
   },
-  umschalterText: { color: FARBEN.textLeise, fontSize: 15, fontWeight: '700' },
-  umschalterZahl: { color: FARBEN.textLeise, fontSize: 13, fontWeight: '700', opacity: 0.65 },
+  umschalterText: { color: F.textLeise, fontSize: 15, fontWeight: '700' },
+  umschalterZahl: { color: F.textLeise, fontSize: 13, fontWeight: '700', opacity: 0.65 },
   // Aktiver Teil als erhöhte Fläche mit Lichtkante statt Farbverlauf (Runde 16).
   umschalterTeilAktiv: {
-    backgroundColor: FARBEN.karteHell,
-    boxShadow: `0px 2px 6px ${FARBEN.schatten}, inset 0px 1px 0px ${FARBEN.lichtkante}`,
+    backgroundColor: F.karteHell,
+    boxShadow: `0px 2px 6px ${F.schatten}, inset 0px 1px 0px ${F.lichtkante}`,
   },
-  umschalterTextAktiv: { color: FARBEN.text },
+  umschalterTextAktiv: { color: F.text },
   // Bei großer Systemschrift rutscht das Element rechts (z. B. die Serie) unter den Titel.
   titelZeile: {
     flexDirection: 'row',
@@ -607,8 +624,8 @@ const stile = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 18,
   },
-  titelOben: { color: FARBEN.textLeise, fontSize: 14, fontWeight: '500', marginBottom: 2 },
-  titel: { color: FARBEN.text, fontSize: 34, fontWeight: '700', letterSpacing: -0.8 },
+  titelOben: { color: F.textLeise, fontSize: 14, fontWeight: '500', marginBottom: 2 },
+  titel: { color: F.text, fontSize: 34, fontWeight: '700', letterSpacing: -0.8 },
   unterKopf: { paddingTop: 10, paddingBottom: 14 },
   unterLeiste: {
     flexDirection: 'row',
@@ -616,14 +633,14 @@ const stile = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 18,
   },
-  unterTitel: { color: FARBEN.text, fontSize: 30, fontWeight: '700', letterSpacing: -0.6 },
-  unterZeile: { color: FARBEN.textLeise, fontSize: 14, marginTop: 4 },
+  unterTitel: { color: F.text, fontSize: 30, fontWeight: '700', letterSpacing: -0.6 },
+  unterZeile: { color: F.textLeise, fontSize: 14, marginTop: 4 },
   abschnitt: {
-    color: FARBEN.textLeise,
+    color: F.textLeise,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1.2,
     marginTop: 24,
     marginBottom: 10,
   },
-});
+}));

@@ -11,6 +11,10 @@ import { type Figurensatz, FIGURENSATZ_STANDARD, istFigurensatz } from '@/ui/bre
 import { einstellungLesen, einstellungSchreiben } from './speicher';
 import type { Sql } from './sql';
 
+/** Hell oder dunkel: wie das Handy oder fest gewählt (Runde 17). */
+export type Erscheinungsbild = 'automatisch' | 'hell' | 'dunkel';
+const ERSCHEINUNGSBILDER: readonly Erscheinungsbild[] = ['automatisch', 'hell', 'dunkel'];
+
 export type Einstellungen = {
   figurensatz: Figurensatz;
   neuProTag: number;
@@ -18,6 +22,7 @@ export type Einstellungen = {
   haeppchen: number;
   ton: boolean;
   vibration: boolean;
+  erscheinungsbild: Erscheinungsbild;
 };
 
 export const EINSTELLUNGEN_STANDARD: Einstellungen = {
@@ -26,6 +31,7 @@ export const EINSTELLUNGEN_STANDARD: Einstellungen = {
   haeppchen: HAEPPCHEN_STANDARD,
   ton: false,
   vibration: false,
+  erscheinungsbild: 'automatisch',
 };
 
 export async function einstellungenLaden(sql: Sql): Promise<Einstellungen> {
@@ -35,12 +41,16 @@ export async function einstellungenLaden(sql: Sql): Promise<Einstellungen> {
   const haeppchen = await einstellungLesen<unknown>(sql, 'haeppchen', s.haeppchen);
   const ton = await einstellungLesen<unknown>(sql, 'ton', s.ton);
   const vibration = await einstellungLesen<unknown>(sql, 'vibration', s.vibration);
+  const bild = await einstellungLesen<unknown>(sql, 'erscheinungsbild', s.erscheinungsbild);
   return {
     figurensatz: istFigurensatz(figurensatz) ? figurensatz : s.figurensatz,
     neuProTag: typeof neuProTag === 'number' ? neuProTagBegrenzen(neuProTag) : s.neuProTag,
     haeppchen: typeof haeppchen === 'number' ? haeppchenBegrenzen(haeppchen) : s.haeppchen,
     ton: typeof ton === 'boolean' ? ton : s.ton,
     vibration: typeof vibration === 'boolean' ? vibration : s.vibration,
+    erscheinungsbild: ERSCHEINUNGSBILDER.includes(bild as Erscheinungsbild)
+      ? (bild as Erscheinungsbild)
+      : s.erscheinungsbild,
   };
 }
 

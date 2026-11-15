@@ -17,7 +17,8 @@ import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 import Svg, { Line, Polygon, SvgXml } from 'react-native-svg';
 
 import { DAUER, erscheinen } from '@/ui/bewegung';
-import { FARBEN } from '@/ui/farben';
+import type { Farben } from '@/ui/farben';
+import { useFarben } from '@/ui/thema';
 import { Text } from '@/ui/Text';
 
 import { type Figurensatz, type FigurName, FIGURENSATZ_STANDARD } from './figuren';
@@ -69,6 +70,7 @@ export function Schachbrett({
   gleitZug,
   onZug,
 }: Props) {
+  const F = useFarben();
   const ruhig = useReducedMotion();
   const f = groesse / 8;
   const felder = brettfelder(fen, ansicht);
@@ -198,14 +200,14 @@ export function Schachbrett({
             styles.feld,
             ecke(feld),
             eckenRundung(feld),
-            { backgroundColor: hell ? FARBEN.brettHell : FARBEN.brettDunkel },
+            { backgroundColor: hell ? F.brettHell : F.brettDunkel },
           ]}
         >
           {koordinaten && index % 8 === 0 && (
-            <Text style={[styles.reihe, koordinate(f, hell)]}>{feld[1]}</Text>
+            <Text style={[styles.reihe, koordinate(F, f, hell)]}>{feld[1]}</Text>
           )}
           {koordinaten && index >= 56 && (
-            <Text style={[styles.linie, koordinate(f, hell)]}>{feld[0]}</Text>
+            <Text style={[styles.linie, koordinate(F, f, hell)]}>{feld[0]}</Text>
           )}
         </View>
       ))}
@@ -217,7 +219,7 @@ export function Schachbrett({
             styles.feld,
             ecke(feld),
             eckenRundung(feld),
-            { backgroundColor: FARBEN.brettMarkierung },
+            { backgroundColor: F.brettMarkierung },
           ]}
         />
       ))}
@@ -313,6 +315,7 @@ function Pfeil({
   ansicht: Seite;
   groesse: number;
 }) {
+  const F = useFarben();
   const mitte = (feld: Feld) => {
     const index = indexAusFeld(feld, ansicht);
     return { x: (index % 8) * f + f / 2, y: Math.floor(index / 8) * f + f / 2 };
@@ -333,23 +336,23 @@ function Pfeil({
         y1={von.y}
         x2={ende.x}
         y2={ende.y}
-        stroke={FARBEN.akzent}
+        stroke={F.akzent}
         strokeWidth={f * 0.18}
         strokeLinecap="round"
         opacity={0.9}
       />
       <Polygon
         points={`${nach.x},${nach.y} ${seite(Math.PI / 2)} ${seite(-Math.PI / 2)}`}
-        fill={FARBEN.akzent}
+        fill={F.akzent}
         opacity={0.9}
       />
     </Svg>
   );
 }
 
-const koordinate = (f: number, hell: boolean) => ({
+const koordinate = (F: Farben, f: number, hell: boolean) => ({
   fontSize: Math.max(9, f * 0.2),
-  color: hell ? FARBEN.brettDunkel : FARBEN.brettHell,
+  color: hell ? F.brettDunkel : F.brettHell,
 });
 
 const styles = StyleSheet.create({

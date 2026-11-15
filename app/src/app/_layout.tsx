@@ -1,3 +1,4 @@
+import { NavigationBar } from 'expo-navigation-bar';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
@@ -5,24 +6,38 @@ import { View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { DatenAnbieter } from '@/daten/DatenAnbieter';
-import { FARBEN } from '@/ui/farben';
 import { StartAnimation } from '@/ui/logo/StartAnimation';
+import { ThemaAnbieter, useFarben } from '@/ui/thema';
 
-// Wurzel-Layout: Datenbank für alle Bildschirme, Navigation ohne Kopfzeile auf dunklem Grund.
-// Beim Kaltstart liegt einmal die Start-Animation darüber.
+// Wurzel-Layout: Datenbank und Farbschema (hell/dunkel) für alle Bildschirme, Navigation ohne
+// Kopfzeile. Beim Kaltstart liegt einmal die Start-Animation darüber.
 export default function RootLayout() {
+  return (
+    <DatenAnbieter>
+      <ThemaAnbieter>
+        <Navigation />
+      </ThemaAnbieter>
+    </DatenAnbieter>
+  );
+}
+
+function Navigation() {
+  const F = useFarben();
   const [startLaeuft, setStartLaeuft] = useState(true);
   const fertig = useCallback(() => setStartLaeuft(false), []);
   // Bei „Animationen entfernen“ nur überblenden, ohne Bewegung.
   const ruhig = useReducedMotion();
+  // Status- und Systemleiste: helle Symbole auf dunklem Grund, dunkle auf hellem.
+  const symbole = F.dunkel ? 'light' : 'dark';
   return (
-    <DatenAnbieter>
-      <StatusBar style="light" />
-      <View style={{ flex: 1, backgroundColor: FARBEN.hintergrund }}>
+    <>
+      <StatusBar style={symbole} />
+      <NavigationBar style={symbole} />
+      <View style={{ flex: 1, backgroundColor: F.hintergrund }}>
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: FARBEN.hintergrund },
+            contentStyle: { backgroundColor: F.hintergrund },
             animation: ruhig ? 'fade' : 'default',
           }}
         >
@@ -34,6 +49,6 @@ export default function RootLayout() {
         </Stack>
         {startLaeuft && <StartAnimation onFertig={fertig} />}
       </View>
-    </DatenAnbieter>
+    </>
   );
 }

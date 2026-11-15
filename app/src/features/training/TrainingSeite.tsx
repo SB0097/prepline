@@ -35,18 +35,18 @@ import { useDatenbank } from '@/daten/DatenAnbieter';
 import {
   Balken,
   Federnd,
-  KARTE,
   Knopf,
   RundKnopf,
   Seitenpunkt,
-  TIEFE,
+  tiefe,
   TIPPFLAECHE,
+  useKarte,
   zurueck,
 } from '@/ui/bausteine';
 import { DAUER, erscheinen, GLEITEN } from '@/ui/bewegung';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { type Feldmarkierung, Schachbrett } from '@/ui/brett/Schachbrett';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen, useFarben } from '@/ui/thema';
 import { Zeichen } from '@/ui/symbole';
 import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
@@ -102,6 +102,9 @@ function uebernehmen(ablauf: Ablauf, runde: Runde, teile: readonly Trainingsteil
 }
 
 export function TrainingSeite() {
+  const KARTE = useKarte().karte;
+  const F = useFarben();
+  const stile = useStile();
   const db = useDatenbank();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const nurId = id ? Number(id) : undefined;
@@ -233,7 +236,7 @@ export function TrainingSeite() {
   const zeigtZug = (schritt.art === 'neu' || runde.nachspielen) && anzeige?.art !== 'richtig';
   const markierungen: Feldmarkierung[] = [
     ...(anzeige ? anzeige.felder.map((feld) => ({ feld, farbe: MARKIERUNG[anzeige.art] })) : []),
-    ...(tippFeld ? [{ feld: tippFeld, farbe: FARBEN.brettTipp }] : []),
+    ...(tippFeld ? [{ feld: tippFeld, farbe: F.brettTipp }] : []),
   ];
   const kommentar = anzeige?.art === 'richtig' ? schritt.kommentar : vorher?.kommentar;
   const eigenerSchritt = schritt.art !== 'gegner';
@@ -433,7 +436,7 @@ export function TrainingSeite() {
         /* Bedienleiste am Daumen: Tipp, Zugliste und bei Eröffnungen aus der Sammlung „Warum?“. */
         <View style={[KARTE, stile.unten]}>
           <Aktion titel="Tipp" aus={!tippMoeglich || blaettert} onPress={tipp}>
-            <Zeichen name="birne" farbe={FARBEN.text} groesse={22} />
+            <Zeichen name="birne" farbe={F.text} groesse={22} />
           </Aktion>
           <Aktion
             trenner
@@ -442,7 +445,7 @@ export function TrainingSeite() {
             beschriftung={zuegeOffen ? 'Züge ausblenden' : 'Züge anzeigen'}
             onPress={() => setZuegeOffen(!zuegeOffen)}
           >
-            <Zeichen name="liste" farbe={zuegeOffen ? FARBEN.akzent : FARBEN.text} groesse={22} />
+            <Zeichen name="liste" farbe={zuegeOffen ? F.akzent : F.text} groesse={22} />
           </Aktion>
           {teil.rep.quelle && (
             <Aktion
@@ -491,6 +494,8 @@ function Aktion({
   onPress: () => void;
   children: ReactNode;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   return (
     <Federnd
       onPress={onPress}
@@ -507,7 +512,7 @@ function Aktion({
     >
       {aktiv && <View style={stile.aktionAktiv} />}
       {children}
-      <Text style={[stile.aktionText, aktiv && { color: FARBEN.akzent }]}>{titel}</Text>
+      <Text style={[stile.aktionText, aktiv && { color: F.akzent }]}>{titel}</Text>
     </Federnd>
   );
 }
@@ -530,12 +535,14 @@ function Meldung({
   /** Lernphase, steht vorn in der kleinen Zeile („Aus dem Kopf · Weiß am Zug“). */
   phase?: string | undefined;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   const amZug = seite === 'weiss' ? 'Weiß am Zug' : 'Schwarz am Zug';
   if (anzeige?.art === 'richtig') {
     return (
       <Rueckmeldung
         key="richtig"
-        farbe={FARBEN.richtig}
+        farbe={F.richtig}
         zeichen="haken"
         titel="Richtig"
         text="Weiter geht’s gleich automatisch"
@@ -546,7 +553,7 @@ function Meldung({
     return (
       <Rueckmeldung
         key="falsch"
-        farbe={FARBEN.falsch}
+        farbe={F.falsch}
         zeichen="kreuz"
         titel="Nicht ganz"
         text={`Richtig ist ${zugText(schritt)} · zieh ihn jetzt nach`}
@@ -557,7 +564,7 @@ function Meldung({
     return (
       <Rueckmeldung
         key="alternative"
-        farbe={FARBEN.hinweis}
+        farbe={F.hinweis}
         zeichen="ausruf"
         titel="Nicht dein Hauptzug"
         text={`${sanAufDeutsch(anzeige.san)} ist auch spielbar · versuch’s nochmal`}
@@ -567,7 +574,7 @@ function Meldung({
   if (schritt.art === 'gegner') {
     return (
       <View style={stile.meldung}>
-        <Text style={[stile.meldungTitelGross, { color: FARBEN.textLeise }]}>Gegner zieht …</Text>
+        <Text style={[stile.meldungTitelGross, { color: F.textLeise }]}>Gegner zieht …</Text>
       </View>
     );
   }
@@ -602,6 +609,8 @@ function Rueckmeldung({
   titel: string;
   text: string;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   const ruhig = useReducedMotion();
   const pfad = {
     haken: 'M6 12.5l4 4L18 8.5',
@@ -618,7 +627,7 @@ function Rueckmeldung({
             <Circle cx={12} cy={12} r={12} fill={farbe} />
             <Path
               d={pfad}
-              stroke={FARBEN.hintergrund}
+              stroke={F.hintergrund}
               strokeWidth={3}
               strokeLinecap="round"
               fill="none"
@@ -658,6 +667,7 @@ function Zugliste({
   aus: boolean;
   onWahl: (zuege: number) => void;
 }) {
+  const stile = useStile();
   if (schritte.length === 0) return <Text style={stile.zuglisteLeer}>Noch keine Züge</Text>;
   const markiert = (gezeigt ?? schritte.length) - 1;
   return (
@@ -707,6 +717,8 @@ function FertigAnsicht({
   fehler: number;
   vibration: boolean;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   const ruhig = useReducedMotion();
   const offen = useSharedValue(ruhig ? 0 : HAKEN_LAENGE);
   useEffect(() => {
@@ -729,7 +741,7 @@ function FertigAnsicht({
             <AnimierterPfad
               d="M5 12.5l4.5 4.5L19 7.5"
               fill="none"
-              stroke={FARBEN.richtig}
+              stroke={F.richtig}
               strokeWidth={2.6}
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -765,13 +777,13 @@ function FertigAnsicht({
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund, paddingBottom: 16 },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund, paddingBottom: 16 },
   kopf: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 },
   kopfMitte: { flex: 1, alignItems: 'center', gap: 2, paddingHorizontal: 8 },
   kopfPlatz: { width: 40 },
-  titel: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
-  zaehler: { color: FARBEN.textLeise, fontSize: 13, fontWeight: '500' },
+  titel: { color: F.text, fontSize: 17, fontWeight: '700' },
+  zaehler: { color: F.textLeise, fontSize: 13, fontWeight: '500' },
   balken: { marginHorizontal: 20, marginTop: 16 },
   inhalt: { paddingBottom: 16 },
   // Brett in einem erhöhten Rahmen (Runde 16 „Tiefe“).
@@ -780,10 +792,10 @@ const stile = StyleSheet.create({
     marginTop: 16,
     padding: RAHMEN,
     borderRadius: 20,
-    backgroundColor: FARBEN.karteHell,
+    backgroundColor: F.karteHell,
     borderWidth: 1,
-    borderColor: FARBEN.lichtkante,
-    ...TIEFE,
+    borderColor: F.lichtkante,
+    ...tiefe(F),
   },
   coach: {
     flexDirection: 'row',
@@ -793,13 +805,13 @@ const stile = StyleSheet.create({
     marginTop: 16,
     padding: 14,
     borderRadius: 20,
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.akzentRand,
+    backgroundColor: F.karte,
+    borderColor: F.akzentRand,
     borderWidth: 1,
   },
   coachTexte: { flex: 1, gap: 4 },
-  coachTitel: { color: FARBEN.akzent, fontSize: 14, fontWeight: '700' },
-  coachInhalt: { color: FARBEN.text, fontSize: 14.5, lineHeight: 21 },
+  coachTitel: { color: F.akzent, fontSize: 14, fontWeight: '700' },
+  coachInhalt: { color: F.text, fontSize: 14.5, lineHeight: 21 },
   // Status ruhiger (Runde 18): links „Dein Zug“ mit Zeile darunter, rechts ◀ ▶.
   statusZeile: {
     flexDirection: 'row',
@@ -813,34 +825,34 @@ const stile = StyleSheet.create({
   statusText: { flex: 1, minHeight: 72, justifyContent: 'flex-start' },
   // Pfeile mittig zur Titelzeile.
   blaettern: { flexDirection: 'row', gap: 8, marginTop: -8 },
-  blickPunkt: { width: 12, height: 12, borderRadius: 6, backgroundColor: FARBEN.textLeise },
+  blickPunkt: { width: 12, height: 12, borderRadius: 6, backgroundColor: F.textLeise },
   zugliste: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: 17, marginTop: 6 },
-  zuglisteLeer: { color: FARBEN.textLeise, fontSize: 14, marginHorizontal: 20, marginTop: 14 },
+  zuglisteLeer: { color: F.textLeise, fontSize: 14, marginHorizontal: 20, marginTop: 14 },
   // Sichtbar ist die kleine Pille, antippbar sind 48 dp Höhe (Android-Mindestmaß).
   zugTippflaeche: { minHeight: TIPPFLAECHE, justifyContent: 'center', paddingHorizontal: 3 },
   zugPille: {
     paddingHorizontal: 11,
     paddingVertical: 7,
     borderRadius: 14,
-    backgroundColor: FARBEN.karte,
+    backgroundColor: F.karte,
   },
-  zugPilleText: { color: FARBEN.text, fontSize: 14 },
-  zugPilleAktiv: { backgroundColor: FARBEN.akzentFlaeche },
-  zugPilleGedrueckt: { backgroundColor: FARBEN.karteHell },
-  zugPilleTextAktiv: { color: FARBEN.akzentHell, fontWeight: '700' },
+  zugPilleText: { color: F.text, fontSize: 14 },
+  zugPilleAktiv: { backgroundColor: F.akzentFlaeche },
+  zugPilleGedrueckt: { backgroundColor: F.karteHell },
+  zugPilleTextAktiv: { color: F.akzentHell, fontWeight: '700' },
   meldung: { gap: 4 },
   titelZeile: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  meldungTitelGross: { color: FARBEN.text, fontSize: 20, fontWeight: '600', letterSpacing: -0.2 },
-  meldungText: { color: FARBEN.textLeise, fontSize: 14 },
+  meldungTitelGross: { color: F.text, fontSize: 20, fontWeight: '600', letterSpacing: -0.2 },
+  meldungText: { color: F.textLeise, fontSize: 14 },
   kommentar: {
     marginHorizontal: 16,
     marginTop: 16,
     padding: 14,
     borderRadius: 16,
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.rand,
+    backgroundColor: F.karte,
+    borderColor: F.rand,
     borderWidth: 1,
-    color: FARBEN.text,
+    color: F.text,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -873,14 +885,14 @@ const stile = StyleSheet.create({
   },
   aktionKompakt: { height: 58, gap: 2 },
   aktion: { flex: 1, height: 64, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  aktionTrenner: { borderLeftWidth: 1, borderLeftColor: FARBEN.rand },
+  aktionTrenner: { borderLeftWidth: 1, borderLeftColor: F.rand },
   aktionAktiv: {
     ...StyleSheet.absoluteFill,
     marginHorizontal: 6,
     borderRadius: 18,
-    backgroundColor: FARBEN.akzentFlaeche,
+    backgroundColor: F.akzentFlaeche,
   },
-  aktionText: { color: FARBEN.text, fontSize: 13, fontWeight: '700' },
+  aktionText: { color: F.text, fontSize: 13, fontWeight: '700' },
   fertig: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   fertigKreis: {
     width: 108,
@@ -893,5 +905,5 @@ const stile = StyleSheet.create({
   },
   fertigKnopf: { marginHorizontal: 20 },
   fertigTexte: { alignItems: 'center', gap: 10 },
-  fertigTitel: { color: FARBEN.text, fontSize: 24, fontWeight: '700' },
-});
+  fertigTitel: { color: F.text, fontSize: 24, fontWeight: '700' },
+}));

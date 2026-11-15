@@ -1,7 +1,7 @@
 import { linienAusBaum, linienKurztext } from '@prepline/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
@@ -11,18 +11,18 @@ import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
 import {
   Abschnitt,
-  KARTE,
   Knopf,
   Lernbalken,
   RundKnopf,
-  TIEFE,
-  zurueck,
+  tiefe,
+  useKarte,
   Zeilenknopf,
+  zurueck,
   ZurueckKopf,
 } from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { BestaetigenDialog, EingabeDialog, Menue } from '@/ui/Dialog';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen, useFarben } from '@/ui/thema';
 import { Zeichen } from '@/ui/symbole';
 import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
@@ -31,6 +31,9 @@ import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 // Linien in einer Karte; Menü ⋯ mit Umbenennen und Löschen. Eine Linie antippen öffnet den
 // Zug-Browser (Skizze D2).
 export function DetailSeite() {
+  const KARTE = useKarte().karte;
+  const F = useFarben();
+  const stile = useStile();
   const { id } = useLocalSearchParams<{ id: string }>();
   const repId = Number(id);
   const breite = useWindowDimensions().width;
@@ -99,7 +102,7 @@ export function DetailSeite() {
             <Zahl
               wert={String(faellig)}
               titel="fällig"
-              farbe={faellig > 0 ? FARBEN.hinweis : undefined}
+              farbe={faellig > 0 ? F.hinweis : undefined}
             />
             <View style={stile.teiler} />
             <Zahl
@@ -124,7 +127,7 @@ export function DetailSeite() {
             <Zeilenknopf
               key={i}
               einzug={16}
-              flaeche={FARBEN.karteHell}
+              flaeche={F.karteHell}
               rund={0}
               onPress={() =>
                 router.push({
@@ -143,7 +146,7 @@ export function DetailSeite() {
                     {i === 0 ? 'Hauptlinie' : 'Variante'} · {linie.knoten.length} Züge
                   </Text>
                 </View>
-                <Zeichen name="weiter" farbe={FARBEN.textLeise} groesse={18} />
+                <Zeichen name="weiter" farbe={F.textLeise} groesse={18} />
               </View>
             </Zeilenknopf>
           ))}
@@ -190,6 +193,7 @@ export function DetailSeite() {
 const RAHMEN = 6;
 
 function Zahl({ wert, titel, farbe }: { wert: string; titel: string; farbe?: string | undefined }) {
+  const stile = useStile();
   return (
     <View style={stile.zahl}>
       <Text style={[stile.zahlWert, ZIFFERN_GLEICH, farbe !== undefined && { color: farbe }]}>
@@ -202,29 +206,29 @@ function Zahl({ wert, titel, farbe }: { wert: string; titel: string; farbe?: str
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund },
   rand: { paddingHorizontal: 20 },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32 },
   rahmen: {
     alignSelf: 'center',
     padding: RAHMEN,
     borderRadius: 20,
-    backgroundColor: FARBEN.karteHell,
+    backgroundColor: F.karteHell,
     borderWidth: 1,
-    borderColor: FARBEN.lichtkante,
-    ...TIEFE,
+    borderColor: F.lichtkante,
+    ...tiefe(F),
   },
   zahlenKarte: { marginTop: 18, marginBottom: 20, padding: 16, gap: 12, borderRadius: 18 },
   zahlen: { flexDirection: 'row', alignItems: 'center' },
   zahl: { flex: 1, alignItems: 'center', gap: 2, paddingHorizontal: 4 },
-  teiler: { width: 1, alignSelf: 'stretch', backgroundColor: FARBEN.rand },
-  zahlWert: { color: FARBEN.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.4 },
+  teiler: { width: 1, alignSelf: 'stretch', backgroundColor: F.rand },
+  zahlWert: { color: F.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.4 },
   linien: { paddingHorizontal: 16, overflow: 'hidden', borderRadius: 18 },
   linie: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  trenner: { borderBottomWidth: 1, borderBottomColor: FARBEN.rand },
+  trenner: { borderBottomWidth: 1, borderBottomColor: F.rand },
   linieText: { flex: 1, gap: 4 },
-  linieZuege: { color: FARBEN.text, fontSize: 15, fontWeight: '500' },
-  leise: { color: FARBEN.textLeise, fontSize: 15 },
-  leiseKlein: { color: FARBEN.textLeise, fontSize: 12.5 },
-});
+  linieZuege: { color: F.text, fontSize: 15, fontWeight: '500' },
+  leise: { color: F.textLeise, fontSize: 15 },
+  leiseKlein: { color: F.textLeise, fontSize: 12.5 },
+}));
