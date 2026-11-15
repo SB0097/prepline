@@ -1,9 +1,9 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Abschnitt, RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
+import { Abschnitt, RUNDUNG, Zeilenknopf, ZurueckKopf } from '@/ui/bausteine';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
 import { Zeichen } from '@/ui/symbole';
@@ -83,31 +83,40 @@ export function UeberSeite() {
   );
 }
 
+/** Zeile auf einer Karte; `einzug` = seitlicher Innenabstand der Karte. */
 export function Zeile({
   titel,
   rechts,
   erste = false,
+  einzug = GRUPPE_EINZUG,
   onPress,
 }: {
   titel: string;
   rechts?: string;
   erste?: boolean;
+  einzug?: number;
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <Zeilenknopf
       onPress={onPress}
       accessibilityRole="button"
-      style={({ pressed }) => [stile.zeile, !erste && stile.trenner, pressed && { opacity: 0.7 }]}
+      einzug={einzug}
+      flaeche={FARBEN.karteHell}
+      rund={0}
     >
-      <Text style={stile.zeilenText} numberOfLines={1}>
-        {titel}
-      </Text>
-      {rechts ? <Text style={stile.rechts}>{rechts}</Text> : null}
-      <Zeichen name="weiter" farbe={FARBEN.textLeise} groesse={16} />
-    </Pressable>
+      <View style={[stile.zeile, !erste && stile.trenner]}>
+        <Text style={stile.zeilenText} numberOfLines={1}>
+          {titel}
+        </Text>
+        {rechts ? <Text style={stile.rechts}>{rechts}</Text> : null}
+        <Zeichen name="weiter" farbe={FARBEN.textLeise} groesse={16} />
+      </View>
+    </Zeilenknopf>
   );
 }
+
+const GRUPPE_EINZUG = 18;
 
 const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
@@ -117,7 +126,12 @@ const stile = StyleSheet.create({
   name: { color: FARBEN.text, fontSize: 24, fontWeight: '700', marginTop: 8 },
   leise: { color: FARBEN.textLeise, fontSize: 13 },
   satz: { color: FARBEN.text, fontSize: 14, marginTop: 8, textAlign: 'center' },
-  gruppe: { backgroundColor: FARBEN.karte, borderRadius: RUNDUNG, paddingHorizontal: 18 },
+  gruppe: {
+    backgroundColor: FARBEN.karte,
+    borderRadius: RUNDUNG,
+    paddingHorizontal: GRUPPE_EINZUG,
+    overflow: 'hidden',
+  },
   zeile: { flexDirection: 'row', alignItems: 'center', minHeight: 50, gap: 10 },
   trenner: { borderTopWidth: 1, borderTopColor: FARBEN.linie },
   zeilenText: { flex: 1, color: FARBEN.text, fontSize: 15 },

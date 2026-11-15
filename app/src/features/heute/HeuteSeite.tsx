@@ -1,8 +1,16 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { useGeladen } from '@/daten/useGeladen';
-import { Abschnitt, Balken, Knopf, Seitenpunkt, SeitenTitel, Verlauf } from '@/ui/bausteine';
+import {
+  Abschnitt,
+  Balken,
+  Knopf,
+  Seitenpunkt,
+  SeitenTitel,
+  Verlauf,
+  Zeilenknopf,
+} from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
 import { Zeichen } from '@/ui/symbole';
@@ -88,13 +96,13 @@ export function HeuteSeite() {
       {weiter && (
         <>
           <Abschnitt titel="Weiter mit" />
-          <Pressable
+          <Zeilenknopf
             onPress={() =>
               router.push({ pathname: '/training', params: { id: String(weiter.id) } })
             }
             accessibilityRole="button"
             accessibilityLabel={`Nur ${weiter.name} trainieren`}
-            style={({ pressed }) => [stile.weiter, pressed && { opacity: 0.8 }]}
+            style={stile.weiter}
           >
             <View style={stile.miniBrett}>
               <Schachbrett
@@ -121,7 +129,7 @@ export function HeuteSeite() {
             <View style={stile.weiterKnopf}>
               <Zeichen name="start" farbe={FARBEN.text} groesse={18} />
             </View>
-          </Pressable>
+          </Zeilenknopf>
         </>
       )}
 
@@ -237,7 +245,14 @@ const stile = StyleSheet.create({
   leer: { gap: 6, paddingTop: 8 },
   leerTitel: { color: FARBEN.text, fontSize: 22, fontWeight: '700' },
   leerText: { color: FARBEN.textLeise, fontSize: 15, lineHeight: 22, marginBottom: 18 },
-  weiter: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  // Etwas Luft oben und unten für die helle Fläche beim Drücken, ohne das Layout zu verschieben.
+  weiter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 10,
+    marginVertical: -10,
+  },
   miniBrett: { borderRadius: 10, overflow: 'hidden' },
   weiterText: { flex: 1, gap: 4 },
   weiterName: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },

@@ -58,6 +58,36 @@ export function Federnd({
   );
 }
 
+/**
+ * Listenzeile zum Antippen (Runde 15): beim Drücken leicht hell hinterlegt statt zu federn.
+ * Die Fläche reicht `einzug` über den Inhalt hinaus, der Inhalt bleibt an seinem Platz.
+ * Auf Karten: `einzug` = Innenabstand der Karte, `flaeche` = FARBEN.karteHell, `rund` = 0
+ * und die Karte braucht `overflow: 'hidden'`.
+ */
+export function Zeilenknopf({
+  einzug = 12,
+  flaeche = FARBEN.karte,
+  rund = 14,
+  style,
+  ...rest
+}: Omit<PressableProps, 'style'> & {
+  einzug?: number;
+  flaeche?: string;
+  rund?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Pressable
+      {...rest}
+      style={({ pressed }) => [
+        { marginHorizontal: -einzug, paddingHorizontal: einzug, borderRadius: rund },
+        pressed && { backgroundColor: flaeche },
+        style,
+      ]}
+    />
+  );
+}
+
 export const RUNDUNG = 22;
 
 /** Grundform einer Karte: Fläche mit feinem Rand. */
