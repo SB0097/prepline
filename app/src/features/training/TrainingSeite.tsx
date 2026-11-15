@@ -284,6 +284,15 @@ export function TrainingSeite() {
   const vorBlaettern = () =>
     setBlick(gezeigtBis + 1 >= runde.index ? null : { linie: runde.linie, zuege: gezeigtBis + 1 });
   const blickLetzter = blaettert ? runde.linie[blickZuege - 1] : undefined;
+  // Beim Zurückblättern erklärt „Warum?“ den Zug, der gerade auf dem Brett zu sehen ist
+  // (nur eigene Züge aus Sammlungs-Eröffnungen; vergangene Züge verraten keine Antwort).
+  const warumBlickText =
+    blickLetzter && blickLetzter.art !== 'gegner'
+      ? erklaerungFuer(teil.rep.quelle, blickLetzter.fen, blickLetzter.san)?.de
+      : undefined;
+  const warumBlick =
+    blickLetzter && warumBlickText ? { schritt: blickLetzter, text: warumBlickText } : null;
+  const warumGezeigt = blaettert ? warumBlick : warum;
   // Zug in der Zugliste angetippt: Stellung nach diesem Zug zeigen (der letzte = aktuell).
   const zugWaehlen = (zuege: number) =>
     setBlick(zuege >= runde.index ? null : { linie: runde.linie, zuege });
@@ -375,15 +384,6 @@ export function TrainingSeite() {
             />
           </View>
         </View>
-        {blaettert && (
-          <Federnd
-            onPress={() => setBlick(null)}
-            accessibilityRole="button"
-            style={stile.zumTraining}
-          >
-            <Text style={stile.zumTrainingText}>Zurück zum Training</Text>
-          </Federnd>
-        )}
         {zuegeOffen && (
           <Zugliste
             schritte={runde.linie.slice(0, runde.index)}
@@ -404,37 +404,64 @@ export function TrainingSeite() {
         {kommentar && !blaettert ? <Text style={stile.kommentar}>{kommentar}</Text> : null}
       </ScrollView>
 
-      {/* Bedienleiste am Daumen: Tipp, Zugliste und bei Eröffnungen aus der Sammlung „Warum?“. */}
-      <View style={[KARTE, stile.unten]}>
-        <Aktion titel="Tipp" aus={!tippMoeglich || blaettert} onPress={tipp}>
-          <Zeichen name="birne" farbe={FARBEN.text} groesse={22} />
-        </Aktion>
-        <Aktion
-          trenner
-          titel="Züge"
-          aktiv={zuegeOffen}
-          beschriftung={zuegeOffen ? 'Züge ausblenden' : 'Züge anzeigen'}
-          onPress={() => setZuegeOffen(!zuegeOffen)}
-        >
-          <Zeichen name="liste" farbe={zuegeOffen ? FARBEN.akzent : FARBEN.text} groesse={22} />
-        </Aktion>
-        {teil.rep.quelle && (
+      {/* Beim Zurückblättern wird die Bedienleiste zum Knopf „Zurück zum Training“ (Runde 19),
+          gleich hoch wie die Leiste, damit oben nichts verrutscht. */}
+      {blaettert ? (
+        <View style={stile.untenZurueck}>
+          <View style={stile.untenZurueckKnopf}>
+            <Knopf titel="Zurück zum Training" symbol="start" onPress={() => setBlick(null)} />
+          </View>
+          {teil.rep.quelle && (
+            <View style={[KARTE, stile.untenWarum]}>
+              <Aktion
+                kompakt
+                titel="Warum?"
+                aus={!warumBlick}
+                beschriftung={
+                  warumBlick
+                    ? `Warum ${zugText(warumBlick.schritt)}?`
+                    : 'Warum? – zu diesem Zug gibt es keine Erklärung'
+                }
+                onPress={() => setWarumOffen(true)}
+              >
+                <CoachBauer groesse={22} />
+              </Aktion>
+            </View>
+          )}
+        </View>
+      ) : (
+        /* Bedienleiste am Daumen: Tipp, Zugliste und bei Eröffnungen aus der Sammlung „Warum?“. */
+        <View style={[KARTE, stile.unten]}>
+          <Aktion titel="Tipp" aus={!tippMoeglich || blaettert} onPress={tipp}>
+            <Zeichen name="birne" farbe={FARBEN.text} groesse={22} />
+          </Aktion>
           <Aktion
             trenner
-            titel="Warum?"
-            aus={!warumMoeglich || blaettert}
-            beschriftung={warum ? `Warum ${zugText(warum.schritt)}?` : 'Warum?'}
-            onPress={() => setWarumOffen(true)}
+            titel="Züge"
+            aktiv={zuegeOffen}
+            beschriftung={zuegeOffen ? 'Züge ausblenden' : 'Züge anzeigen'}
+            onPress={() => setZuegeOffen(!zuegeOffen)}
           >
-            <CoachBauer groesse={26} />
+            <Zeichen name="liste" farbe={zuegeOffen ? FARBEN.akzent : FARBEN.text} groesse={22} />
           </Aktion>
-        )}
-      </View>
-      {warum?.text && (
+          {teil.rep.quelle && (
+            <Aktion
+              trenner
+              titel="Warum?"
+              aus={!warumMoeglich || blaettert}
+              beschriftung={warum ? `Warum ${zugText(warum.schritt)}?` : 'Warum?'}
+              onPress={() => setWarumOffen(true)}
+            >
+              <CoachBauer groesse={26} />
+            </Aktion>
+          )}
+        </View>
+      )}
+      {warumGezeigt?.text && (
         <WarumBlase
           sichtbar={warumOffen}
-          titel={`Warum ${zugText(warum.schritt)}?`}
-          text={warum.text}
+          titel={`Warum ${zugText(warumGezeigt.schritt)}?`}
+          text={warumGezeigt.text}
           onSchliessen={() => setWarumOffen(false)}
         />
       )}
@@ -449,6 +476,7 @@ function Aktion({
   aus = false,
   aktiv = false,
   trenner = false,
+  kompakt = false,
   onPress,
   children,
 }: {
@@ -458,6 +486,8 @@ function Aktion({
   aktiv?: boolean;
   /** Feine Linie links als Abgrenzung zum vorigen Knopf in der Leiste. */
   trenner?: boolean;
+  /** Niedriger, z. B. neben dem Knopf „Zurück zum Training“. */
+  kompakt?: boolean;
   onPress: () => void;
   children: ReactNode;
 }) {
@@ -468,7 +498,12 @@ function Aktion({
       accessibilityRole="button"
       accessibilityLabel={beschriftung ?? titel}
       accessibilityState={{ disabled: aus, expanded: aktiv }}
-      style={[stile.aktion, trenner && stile.aktionTrenner, aus && { opacity: 0.35 }]}
+      style={[
+        stile.aktion,
+        kompakt && stile.aktionKompakt,
+        trenner && stile.aktionTrenner,
+        aus && { opacity: 0.35 },
+      ]}
     >
       {aktiv && <View style={stile.aktionAktiv} />}
       {children}
@@ -779,17 +814,6 @@ const stile = StyleSheet.create({
   // Pfeile mittig zur Titelzeile.
   blaettern: { flexDirection: 'row', gap: 8, marginTop: -8 },
   blickPunkt: { width: 12, height: 12, borderRadius: 6, backgroundColor: FARBEN.textLeise },
-  zumTraining: {
-    alignSelf: 'flex-start',
-    marginHorizontal: 20,
-    marginTop: 14,
-    minHeight: TIPPFLAECHE,
-    justifyContent: 'center',
-    paddingHorizontal: 18,
-    borderRadius: 24,
-    backgroundColor: FARBEN.akzentFlaeche,
-  },
-  zumTrainingText: { color: FARBEN.akzentHell, fontSize: 15, fontWeight: '600' },
   zugliste: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: 17, marginTop: 6 },
   zuglisteLeer: { color: FARBEN.textLeise, fontSize: 14, marginHorizontal: 20, marginTop: 14 },
   // Sichtbar ist die kleine Pille, antippbar sind 48 dp Höhe (Android-Mindestmaß).
@@ -829,6 +853,25 @@ const stile = StyleSheet.create({
     borderRadius: 24,
     paddingVertical: 4,
   },
+  untenZurueck: {
+    height: 74,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  untenZurueckKnopf: { flex: 1 },
+  // So hoch wie der Knopf daneben (Knopf: 2 × 17 Innenabstand + Schrift).
+  untenWarum: {
+    width: 96,
+    height: 58,
+    borderRadius: 29,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  aktionKompakt: { height: 58, gap: 2 },
   aktion: { flex: 1, height: 64, alignItems: 'center', justifyContent: 'center', gap: 6 },
   aktionTrenner: { borderLeftWidth: 1, borderLeftColor: FARBEN.rand },
   aktionAktiv: {
