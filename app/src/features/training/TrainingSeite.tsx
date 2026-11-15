@@ -38,7 +38,7 @@ import { CoachBauer } from '@/ui/CoachBauer';
 import { type Feldmarkierung, Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
 import { Zeichen } from '@/ui/symbole';
-import { Text } from '@/ui/Text';
+import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
 import { WarumBlase } from './WarumBlase';
 
@@ -260,7 +260,7 @@ export function TrainingSeite() {
           <Text style={stile.titel} numberOfLines={1}>
             {teil.rep.name}
           </Text>
-          <Text style={stile.zaehler} testID="fortschritt">
+          <Text style={[stile.zaehler, ZIFFERN_GLEICH]} testID="fortschritt">
             Zug {Math.min(erledigt + 1, gesamt)} von {gesamt}
           </Text>
         </View>

@@ -20,7 +20,7 @@ import { Abschnitt, Federnd, RUNDUNG, SeitenTitel } from '@/ui/bausteine';
 import { FIGURENSAETZE, type Figurensatz } from '@/ui/brett/figuren';
 import { FIGUREN_SVG } from '@/ui/brett/figurenSvg';
 import { FARBEN } from '@/ui/farben';
-import { Text } from '@/ui/Text';
+import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
 // Mehr-Seite (Skizze M2, 11.11.2026): Figuren als Vorschau-Kacheln, darunter die Trainings-Einstellungen,
 // dann Daten (Sicherung) und Info (Über Prepline, Datenschutz) aus Skizze M8.
@@ -138,7 +138,13 @@ function FigurenKachel({
           <SvgXml xml={FIGUREN_SVG[satz].bN} width={36} height={36} />
         </View>
       </View>
-      <Text style={[stile.figurName, aktiv && stile.figurNameAktiv]}>{NAMEN[satz]}</Text>
+      <Text
+        style={[stile.figurName, aktiv && stile.figurNameAktiv]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {NAMEN[satz]}
+      </Text>
     </Federnd>
   );
 }
@@ -178,7 +184,7 @@ function ZaehlerZeile({
         >
           <Text style={stile.zaehlerZeichen}>−</Text>
         </Pressable>
-        <Text style={stile.zaehlerWert} testID={testID}>
+        <Text style={[stile.zaehlerWert, ZIFFERN_GLEICH]} testID={testID}>
           {wert}
         </Text>
         <Pressable

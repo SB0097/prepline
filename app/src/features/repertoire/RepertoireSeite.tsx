@@ -12,7 +12,7 @@ import { RundKnopf, SeitenTitel, Umschalter } from '@/ui/bausteine';
 import type { Figurensatz } from '@/ui/brett/figuren';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
-import { Text } from '@/ui/Text';
+import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
 // Repertoire-Seite (Layout „Ruhig & groß“, Serkan 14.11.2026): Umschalter Weiß/Schwarz,
 // darunter eine ruhige Liste: Mini-Brett, Name, Status, Stellungen und ein kleiner Prozent-Ring.
@@ -167,7 +167,10 @@ function ProzentRing({ prozent }: { prozent: number }) {
         )}
       </Svg>
       <View style={stile.ringMitte}>
-        <Text style={stile.ringText}>{prozent}%</Text>
+        {/* Der Ring hat eine feste Größe, deshalb wächst die Zahl kaum mit. */}
+        <Text style={[stile.ringText, ZIFFERN_GLEICH]} maxFontSizeMultiplier={1.2}>
+          {prozent}%
+        </Text>
       </View>
     </View>
   );
