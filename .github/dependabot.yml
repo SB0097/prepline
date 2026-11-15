@@ -1,0 +1,33 @@
+# Expo-/React-Native-Pakete NICHT per Dependabot hochziehen – die werden mit
+# "npx expo install --fix" passend zur SDK-Version aktualisiert.
+version: 2
+updates:
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    target-branch: 'test'
+    schedule:
+      interval: 'monthly'
+
+  - package-ecosystem: 'npm'
+    directory: '/'
+    target-branch: 'test'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: 'expo'
+      - dependency-name: 'expo-*'
+      - dependency-name: '@expo/*'
+      - dependency-name: 'react'
+      - dependency-name: 'react-dom'
+      - dependency-name: 'react-native'
+      - dependency-name: 'react-native-*'
+      - dependency-name: '@types/react'
+      - dependency-name: 'jest-expo'
+      - dependency-name: 'eslint-config-expo'
+      - dependency-name: 'typescript'
+      - dependency-name: 'eslint'
+      - dependency-name: '@eslint/js'
+    groups:
+      entwicklungswerkzeuge:
+        dependency-type: 'development'

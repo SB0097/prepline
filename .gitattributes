@@ -15,3 +15,6 @@
 *.ttf  binary
 *.otf  binary
 *.jar  binary
+
+# Test-PGNs unverändert lassen (z. B. Windows-Zeilenenden und BOM absichtlich)
+shared/test/pgn/*.pgn -text

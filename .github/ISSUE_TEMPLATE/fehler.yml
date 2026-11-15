@@ -1,0 +1,28 @@
+name: Fehler melden
+description: Etwas funktioniert nicht wie erwartet
+labels: ['fehler']
+body:
+  - type: textarea
+    id: was
+    attributes:
+      label: Was ist passiert?
+    validations:
+      required: true
+  - type: textarea
+    id: erwartet
+    attributes:
+      label: Was hättest du erwartet?
+  - type: textarea
+    id: schritte
+    attributes:
+      label: Wie kann man es nachstellen?
+      placeholder: "1. App öffnen\n2. …"
+  - type: textarea
+    id: pgn
+    attributes:
+      label: PGN (falls es um einen Import geht)
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: App-Version / Handy / Android-Version
