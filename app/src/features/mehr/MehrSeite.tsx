@@ -16,7 +16,7 @@ import { einstellungLesen } from '@/daten/speicher';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
 import { APP_VERSION, Zeile } from '@/features/info/UeberSeite';
-import { Abschnitt, Federnd, RUNDUNG, SeitenTitel } from '@/ui/bausteine';
+import { Abschnitt, Federnd, RUNDUNG, SeitenTitel, TIPPFLAECHE } from '@/ui/bausteine';
 import { FIGURENSAETZE, type Figurensatz } from '@/ui/brett/figuren';
 import { FIGUREN_SVG } from '@/ui/brett/figurenSvg';
 import { FARBEN } from '@/ui/farben';
@@ -179,10 +179,13 @@ function ZaehlerZeile({
         <Pressable
           onPress={() => onWert(wert - 1)}
           disabled={wert <= bereich.min}
-          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={`${titel}: weniger`}
-          style={wert <= bereich.min && stile.zaehlerAus}
+          style={({ pressed }) => [
+            stile.zaehlerKnopf,
+            pressed && stile.zaehlerGedrueckt,
+            wert <= bereich.min && stile.zaehlerAus,
+          ]}
         >
           <Text style={stile.zaehlerZeichen}>−</Text>
         </Pressable>
@@ -192,10 +195,13 @@ function ZaehlerZeile({
         <Pressable
           onPress={() => onWert(wert + 1)}
           disabled={wert >= bereich.max}
-          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={`${titel}: mehr`}
-          style={wert >= bereich.max && stile.zaehlerAus}
+          style={({ pressed }) => [
+            stile.zaehlerKnopf,
+            pressed && stile.zaehlerGedrueckt,
+            wert >= bereich.max && stile.zaehlerAus,
+          ]}
         >
           <Text style={stile.zaehlerZeichen}>+</Text>
         </Pressable>
@@ -204,6 +210,7 @@ function ZaehlerZeile({
   );
 }
 
+/** Ganze Zeile schaltet um, damit die Tippfläche groß genug ist (der Schalter allein ist klein). */
 function SchalterZeile({
   titel,
   wert,
@@ -214,16 +221,22 @@ function SchalterZeile({
   onWert: (wert: boolean) => void;
 }) {
   return (
-    <View style={[stile.zeile, stile.trenner]}>
+    <Pressable
+      onPress={() => onWert(!wert)}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: wert }}
+      accessibilityLabel={titel}
+      style={[stile.zeile, stile.trenner]}
+    >
       <Text style={stile.zeilenText}>{titel}</Text>
-      <Switch
-        value={wert}
-        onValueChange={onWert}
-        accessibilityLabel={titel}
-        trackColor={{ false: FARBEN.linie, true: FARBEN.akzent }}
-        thumbColor={wert ? FARBEN.textAufAkzent : FARBEN.textLeise}
-      />
-    </View>
+      <View pointerEvents="none" importantForAccessibility="no-hide-descendants">
+        <Switch
+          value={wert}
+          trackColor={{ false: FARBEN.linie, true: FARBEN.akzent }}
+          thumbColor={wert ? FARBEN.textAufAkzent : FARBEN.textLeise}
+        />
+      </View>
+    </Pressable>
   );
 }
 
@@ -267,12 +280,18 @@ const stile = StyleSheet.create({
   zaehler: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
     backgroundColor: FARBEN.linie,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
+    borderRadius: TIPPFLAECHE / 2,
+    overflow: 'hidden',
   },
+  // − und + je 48 dp groß (Android-Mindestmaß für Tippflächen).
+  zaehlerKnopf: {
+    width: TIPPFLAECHE,
+    height: TIPPFLAECHE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zaehlerGedrueckt: { backgroundColor: FARBEN.karteHell },
   zaehlerZeichen: { color: FARBEN.akzent, fontSize: 20 },
   zaehlerWert: {
     color: FARBEN.text,
