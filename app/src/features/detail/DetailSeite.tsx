@@ -1,7 +1,7 @@
 import { linienAusBaum, linienKurztext } from '@prepline/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
@@ -9,7 +9,7 @@ import { einstellungenLaden } from '@/daten/einstellungen';
 import { repertoireDetail, repertoireLoeschen, repertoireUmbenennen } from '@/daten/speicher';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
-import { Abschnitt, Knopf, RundKnopf, zurueck, ZurueckKopf } from '@/ui/bausteine';
+import { Abschnitt, Knopf, RundKnopf, zurueck, Zeilenknopf, ZurueckKopf } from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { BestaetigenDialog, EingabeDialog, Menue } from '@/ui/Dialog';
 import { FARBEN } from '@/ui/farben';
@@ -95,7 +95,7 @@ export function DetailSeite() {
         />
         <Abschnitt titel={`Linien · ${linien.length}`} />
         {linien.map((linie, i) => (
-          <Pressable
+          <Zeilenknopf
             key={i}
             onPress={() =>
               router.push({
@@ -104,22 +104,19 @@ export function DetailSeite() {
               })
             }
             accessibilityRole="button"
-            style={({ pressed }) => [
-              stile.linie,
-              i < linien.length - 1 && stile.trenner,
-              pressed && { opacity: 0.7 },
-            ]}
           >
-            <View style={stile.linieText}>
-              <Text style={stile.linieZuege} numberOfLines={1}>
-                {linienKurztext(rep.baum, linie)}
-              </Text>
-              <Text style={stile.leiseKlein}>
-                {i === 0 ? 'Hauptlinie' : 'Variante'} · {linie.knoten.length} Züge
-              </Text>
+            <View style={[stile.linie, i < linien.length - 1 && stile.trenner]}>
+              <View style={stile.linieText}>
+                <Text style={stile.linieZuege} numberOfLines={1}>
+                  {linienKurztext(rep.baum, linie)}
+                </Text>
+                <Text style={stile.leiseKlein}>
+                  {i === 0 ? 'Hauptlinie' : 'Variante'} · {linie.knoten.length} Züge
+                </Text>
+              </View>
+              <Zeichen name="weiter" farbe={FARBEN.textLeise} groesse={18} />
             </View>
-            <Zeichen name="weiter" farbe={FARBEN.textLeise} groesse={18} />
-          </Pressable>
+          </Zeilenknopf>
         ))}
       </ScrollView>
 

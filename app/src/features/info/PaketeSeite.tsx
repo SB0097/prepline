@@ -44,7 +44,7 @@ const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
   rand: { paddingHorizontal: 20 },
   liste: { paddingHorizontal: 20, paddingBottom: 32 },
-  karte: { backgroundColor: FARBEN.karte, paddingHorizontal: 18 },
+  karte: { backgroundColor: FARBEN.karte, paddingHorizontal: 18, overflow: 'hidden' },
   oben: { borderTopLeftRadius: RUNDUNG, borderTopRightRadius: RUNDUNG },
   unten: { borderBottomLeftRadius: RUNDUNG, borderBottomRightRadius: RUNDUNG },
 });

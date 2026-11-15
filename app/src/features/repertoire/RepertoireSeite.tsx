@@ -1,14 +1,14 @@
 import type { Seite } from '@prepline/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 import { einstellungenLaden } from '@/daten/einstellungen';
 import { type RepertoireUebersicht, repertoireUebersicht } from '@/daten/speicher';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
-import { RundKnopf, SeitenTitel, Umschalter } from '@/ui/bausteine';
+import { RundKnopf, SeitenTitel, Umschalter, Zeilenknopf } from '@/ui/bausteine';
 import type { Figurensatz } from '@/ui/brett/figuren';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
@@ -94,11 +94,11 @@ function Zeile({
   const status = faellig > 0 ? `${faellig} fällig` : neu > 0 ? `${neu} neu` : 'alles gut';
   const prozent = stellungen === 0 ? 0 : Math.round((sicher / stellungen) * 100);
   return (
-    <Pressable
+    <Zeilenknopf
       onPress={() => router.push({ pathname: '/eroeffnung/[id]', params: { id: String(rep.id) } })}
       accessibilityRole="button"
       accessibilityLabel={`${rep.name}, ${status}, ${prozent} Prozent sicher`}
-      style={({ pressed }) => [stile.zeile, pressed && { opacity: 0.75 }]}
+      style={stile.zeile}
     >
       <View style={stile.brett}>
         <Schachbrett
@@ -124,7 +124,7 @@ function Zeile({
         </View>
         <ProzentRing prozent={prozent} />
       </View>
-    </Pressable>
+    </Zeilenknopf>
   );
 }
 

@@ -96,6 +96,7 @@ export function MehrSeite() {
           titel="Sicherung"
           rechts={zuletzt(letzteSicherung)}
           erste
+          einzug={20}
           onPress={() => router.push('/sicherung')}
         />
       </View>
@@ -105,9 +106,10 @@ export function MehrSeite() {
           titel="Über Prepline"
           rechts={`Version ${APP_VERSION}`}
           erste
+          einzug={20}
           onPress={() => router.push('/ueber')}
         />
-        <Zeile titel="Datenschutz" onPress={() => router.push('/datenschutz')} />
+        <Zeile titel="Datenschutz" einzug={20} onPress={() => router.push('/datenschutz')} />
       </View>
     </ScrollView>
   );
@@ -238,7 +240,12 @@ const stile = StyleSheet.create({
   vorschauFeld: { width: 36, height: 36 },
   figurName: { color: FARBEN.text, fontSize: 14 },
   figurNameAktiv: { color: FARBEN.akzent, fontWeight: '700' },
-  gruppe: { backgroundColor: FARBEN.karte, borderRadius: RUNDUNG, paddingHorizontal: 20 },
+  gruppe: {
+    backgroundColor: FARBEN.karte,
+    borderRadius: RUNDUNG,
+    paddingHorizontal: 20,
+    overflow: 'hidden',
+  },
   zeile: {
     flexDirection: 'row',
     alignItems: 'center',
