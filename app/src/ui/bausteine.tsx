@@ -30,8 +30,13 @@ export function Federnd({
   style,
   onPressIn,
   onPressOut,
+  skala = 0.96,
   ...rest
-}: Omit<PressableProps, 'style'> & { style?: StyleProp<ViewStyle> }) {
+}: Omit<PressableProps, 'style'> & {
+  style?: StyleProp<ViewStyle>;
+  /** Wie weit die Fläche beim Drücken nachgibt; kleine Knöpfe brauchen mehr, damit man es sieht. */
+  skala?: number;
+}) {
   const [gedrueckt, setGedrueckt] = useState(false);
   const ruhig = useReducedMotion();
   return (
@@ -49,7 +54,7 @@ export function Federnd({
         style,
         gedrueckt && ruhig && { opacity: 0.75 },
         {
-          transform: [{ scale: gedrueckt && !ruhig ? 0.96 : 1 }],
+          transform: [{ scale: gedrueckt && !ruhig ? skala : 1 }],
           transitionProperty: 'transform',
           transitionDuration: DAUER.druck,
           transitionTimingFunction: CSS_AUSKLINGEN,
@@ -244,24 +249,40 @@ export function RundKnopf({
   onPress,
   beschriftung,
   art = 'leise',
+  aus = false,
 }: {
   symbol: Symbolname;
   onPress: () => void;
   beschriftung: string;
   art?: 'akzent' | 'leise';
+  /** Gerade nicht möglich: blass und nicht antippbar. */
+  aus?: boolean;
 }) {
   // Sichtbar bleibt der Kreis (40/44 dp), antippbar sind immer 48 dp (Android-Mindestmaß).
   // Der negative Rand gleicht die größere Fläche aus, das Layout bleibt gleich.
   const kreis = art === 'akzent' ? RUND_AKZENT : RUND_LEISE;
   const ueberstand = -(TIPPFLAECHE - kreis) / 2;
+  // Sichtbares Feedback (Runde 18): kleine Kreise geben deutlich nach (88 %) und leuchten auf.
+  const [gedrueckt, setGedrueckt] = useState(false);
   return (
     <Federnd
       onPress={onPress}
+      onPressIn={() => setGedrueckt(true)}
+      onPressOut={() => setGedrueckt(false)}
+      skala={0.88}
+      disabled={aus}
       accessibilityRole="button"
       accessibilityLabel={beschriftung}
-      style={[stile.rundFlaeche, { margin: ueberstand }]}
+      accessibilityState={{ disabled: aus }}
+      style={[stile.rundFlaeche, { margin: ueberstand }, aus && { opacity: 0.35 }]}
     >
-      <View style={[stile.rund, art === 'leise' && stile.rundLeise]}>
+      <View
+        style={[
+          stile.rund,
+          art === 'leise' && stile.rundLeise,
+          gedrueckt && (art === 'leise' ? stile.rundLeiseGedrueckt : { opacity: 0.85 }),
+        ]}
+      >
         {art === 'akzent' && <Verlauf schraeg von={FARBEN.knopfVon} bis={FARBEN.knopfBis} />}
         <Zeichen
           name={symbol}
@@ -543,6 +564,7 @@ const stile = StyleSheet.create({
     borderColor: FARBEN.rand,
     boxShadow: `inset 0px 1px 0px ${FARBEN.lichtkante}`,
   },
+  rundLeiseGedrueckt: { backgroundColor: FARBEN.linie, borderColor: FARBEN.linie },
   balken: { backgroundColor: FARBEN.karteHell, overflow: 'hidden' },
   lernTeil: { position: 'absolute', left: 0, top: 0, overflow: 'hidden' },
   glanz: { position: 'absolute', top: 0, left: 0 },

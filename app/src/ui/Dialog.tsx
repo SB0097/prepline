@@ -174,22 +174,29 @@ export function Menue({
         onPress={onSchliessen}
         accessibilityLabel="Menü schließen"
       >
-        <View style={[stile.menue, { top: oben + 52 }]} accessibilityRole="menu">
-          {punkte.map((p, i) => (
-            <Pressable
-              key={p.titel}
-              onPress={() => {
-                onSchliessen();
-                p.onPress();
-              }}
-              accessibilityRole="menuitem"
-              style={[stile.menuepunkt, i > 0 && stile.trenner]}
-            >
-              <Text style={[stile.menueText, p.gefaehrlich && { color: FARBEN.falsch }]}>
-                {p.titel}
-              </Text>
-            </Pressable>
-          ))}
+        {/* Außen der Schatten, innen die Rundung: so schneidet die Rundung den Schatten nicht ab. */}
+        <View style={[stile.menueSchatten, { top: oben + 60 }]}>
+          <View style={stile.menue} accessibilityRole="menu">
+            {punkte.map((p, i) => (
+              <Pressable
+                key={p.titel}
+                onPress={() => {
+                  onSchliessen();
+                  p.onPress();
+                }}
+                accessibilityRole="menuitem"
+                style={({ pressed }) => [
+                  stile.menuepunkt,
+                  i > 0 && stile.trenner,
+                  pressed && stile.menuepunktGedrueckt,
+                ]}
+              >
+                <Text style={[stile.menueText, p.gefaehrlich && { color: FARBEN.falsch }]}>
+                  {p.titel}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       </Pressable>
     </Modal>
@@ -221,18 +228,24 @@ const stile = StyleSheet.create({
   knopfLeise: { borderWidth: 2, borderColor: FARBEN.linie },
   knopfLeiseText: { color: FARBEN.text, fontSize: 15 },
   knopfText: { color: FARBEN.hintergrund, fontSize: 15, fontWeight: '700' },
-  menueHintergrund: { flex: 1 },
-  menue: {
+  // Menü (Runde 18): Seite leicht abgedunkelt, Menü mit Schatten, damit es sich klar abhebt.
+  menueHintergrund: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.45)' },
+  menueSchatten: {
     position: 'absolute',
-    right: 14,
-    minWidth: 170,
+    right: 16,
+    minWidth: 200,
+    borderRadius: 18,
+    boxShadow: `0px 12px 32px ${FARBEN.schatten}`,
+  },
+  menue: {
     backgroundColor: FARBEN.karteHell,
     borderColor: FARBEN.linie,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
   },
-  menuepunkt: { paddingHorizontal: 18, paddingVertical: 14 },
+  menuepunkt: { paddingHorizontal: 20, minHeight: 52, justifyContent: 'center' },
+  menuepunktGedrueckt: { backgroundColor: FARBEN.linie },
   trenner: { borderTopWidth: 1, borderTopColor: FARBEN.linie },
-  menueText: { color: FARBEN.text, fontSize: 15 },
+  menueText: { color: FARBEN.text, fontSize: 16 },
 });
