@@ -46,9 +46,9 @@ const stile = StyleSheet.create({
     flex: 1,
     backgroundColor: FARBEN.hintergrund,
     paddingHorizontal: 20,
-    paddingBottom: 16,
   },
-  fuellen: { flex: 1 },
+  // Abstand unten innerhalb des Ausweichbereichs, damit „Weiter“ nicht an der Tastatur klebt.
+  fuellen: { flex: 1, paddingBottom: 16 },
   eingabe: {
     flex: 1,
     marginVertical: 16,

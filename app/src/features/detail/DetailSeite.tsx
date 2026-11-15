@@ -160,7 +160,9 @@ function Zahl({ wert, titel, akzent = false }: { wert: string; titel: string; ak
   return (
     <View style={stile.zahl}>
       <Text style={[stile.zahlWert, akzent && { color: FARBEN.akzent }]}>{wert}</Text>
-      <Text style={stile.leiseKlein}>{titel}</Text>
+      <Text style={stile.leiseKlein} numberOfLines={1} adjustsFontSizeToFit>
+        {titel}
+      </Text>
     </View>
   );
 }
@@ -169,7 +171,7 @@ const stile = StyleSheet.create({
   seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
   rand: { paddingHorizontal: 20 },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32 },
-  zahlen: { flexDirection: 'row', marginTop: 22, marginBottom: 22 },
+  zahlen: { flexDirection: 'row', columnGap: 12, marginTop: 22, marginBottom: 22 },
   zahl: { flex: 1, gap: 2 },
   zahlWert: { color: FARBEN.text, fontSize: 26, fontWeight: '700', letterSpacing: -0.4 },
   linie: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },

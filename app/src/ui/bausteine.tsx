@@ -166,14 +166,18 @@ export function Knopf({
           groesse={20}
         />
       )}
+      {/* Bei großer Systemschrift wird die Beschriftung kleiner statt abgeschnitten. */}
       <Text
-        style={
+        style={[
           art === 'voll'
             ? stile.knopfTextVoll
             : art === 'rahmen'
               ? stile.knopfTextRahmen
-              : stile.knopfTextLeise
-        }
+              : stile.knopfTextLeise,
+          { flexShrink: 1 },
+        ]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
       >
         {titel}
       </Text>
@@ -389,6 +393,7 @@ const stile = StyleSheet.create({
     backgroundColor: FARBEN.akzent,
     borderRadius: 29,
     paddingVertical: 17,
+    paddingHorizontal: 18,
     overflow: 'hidden',
   },
   knopfLeise: {
@@ -397,6 +402,7 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingVertical: 14,
+    paddingHorizontal: 18,
   },
   knopfRahmen: {
     flexDirection: 'row',
@@ -407,6 +413,7 @@ const stile = StyleSheet.create({
     borderColor: FARBEN.linie,
     borderRadius: 29,
     paddingVertical: 15,
+    paddingHorizontal: 18,
   },
   knopfTextRahmen: { color: FARBEN.text, fontSize: 16, fontWeight: '600' },
   knopfTextVoll: { color: FARBEN.textAufAkzent, fontSize: 18, fontWeight: '700' },
@@ -451,10 +458,14 @@ const stile = StyleSheet.create({
   umschalterText: { color: FARBEN.textLeise, fontSize: 15, fontWeight: '700' },
   umschalterZahl: { color: FARBEN.textLeise, fontSize: 13, fontWeight: '700', opacity: 0.65 },
   umschalterTextAktiv: { color: FARBEN.textAufAkzent },
+  // Bei großer Systemschrift rutscht das Element rechts (z. B. die Serie) unter den Titel.
   titelZeile: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
+    columnGap: 12,
+    rowGap: 10,
     paddingTop: 16,
     paddingBottom: 18,
   },
