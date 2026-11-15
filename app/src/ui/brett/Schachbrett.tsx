@@ -13,10 +13,12 @@ import {
 } from '@prepline/shared';
 import { useRef, useState } from 'react';
 import { Animated, type GestureResponderEvent, StyleSheet, View } from 'react-native';
+import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 import Svg, { Line, Polygon, SvgXml } from 'react-native-svg';
 
+import { DAUER, erscheinen } from '@/ui/bewegung';
 import { FARBEN } from '@/ui/farben';
-import { Text } from '../Text';
+import { Text } from '@/ui/Text';
 
 import { type Figurensatz, type FigurName, FIGURENSATZ_STANDARD } from './figuren';
 import { FIGUREN_SVG } from './figurenSvg';
@@ -42,6 +44,11 @@ type Props = {
   koordinaten?: boolean;
   /** Rundung der vier Brettecken in Pixeln. */
   rundung?: number;
+  /**
+   * Zug als UCI, dessen Figur vom Start- zum Zielfeld gleitet (z. B. der Gegnerzug im Training).
+   * Die Figur steht in `fen` schon auf dem Zielfeld; jeder neue Zug gleitet genau einmal.
+   */
+  gleitZug?: string;
   onZug?: (zug: Brettzug) => void;
 };
 
@@ -59,8 +66,10 @@ export function Schachbrett({
   bedienbar = true,
   koordinaten = true,
   rundung = 0,
+  gleitZug,
   onZug,
 }: Props) {
+  const ruhig = useReducedMotion();
   const f = groesse / 8;
   const felder = brettfelder(fen, ansicht);
   const amZug = fen.split(' ')[1] === 'b' ? 'b' : 'w';
@@ -169,6 +178,8 @@ export function Schachbrett({
     ...(auswahl ? [auswahl] : []),
   ];
   const gezogeneFigur = gezogen ? felder[indexAusFeld(gezogen, ansicht)]?.figur : null;
+  // Bei „Animationen entfernen“ steht die Figur sofort auf dem Zielfeld.
+  const gleiten = gleitZug && !ruhig ? felderAusUci(gleitZug) : null;
   const svg = (farbe: 'w' | 'b', typ: string) =>
     FIGUREN_SVG[figurensatz][`${farbe}${typ.toUpperCase()}` as FigurName];
 
@@ -217,18 +228,38 @@ export function Schachbrett({
           style={[styles.feld, ecke(feld), eckenRundung(feld), { backgroundColor: farbe }]}
         />
       ))}
-      {felder.map(({ feld, figur }) =>
-        figur && feld !== gezogen ? (
+      {felder.map(({ feld, figur }) => {
+        if (!figur || feld === gezogen) return null;
+        const bild = (
+          <SvgXml xml={svg(figur.farbe, figur.typ)} width={f} height={f} testID={`figur-${feld}`} />
+        );
+        if (gleiten && feld === gleiten[1]) {
+          // Die Figur steht schon auf dem Zielfeld und startet um den Abstand zum Startfeld versetzt.
+          const von = ecke(gleiten[0]);
+          const nach = ecke(feld);
+          return (
+            <Reanimated.View
+              key={`f${feld}-${gleitZug}`}
+              pointerEvents="none"
+              style={[styles.feld, nach]}
+              entering={erscheinen({
+                dauer: DAUER.zug,
+                vonX: von.left - nach.left,
+                vonY: von.top - nach.top,
+                blenden: false,
+                gleiten: true,
+              })}
+            >
+              {bild}
+            </Reanimated.View>
+          );
+        }
+        return (
           <View key={`f${feld}`} pointerEvents="none" style={[styles.feld, ecke(feld)]}>
-            <SvgXml
-              xml={svg(figur.farbe, figur.typ)}
-              width={f}
-              height={f}
-              testID={`figur-${feld}`}
-            />
+            {bild}
           </View>
-        ) : null,
-      )}
+        );
+      })}
       {ziele.map((feld) => {
         const schlagen = felder[indexAusFeld(feld, ansicht)]?.figur;
         return (

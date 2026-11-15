@@ -2,12 +2,61 @@
 // Knöpfe, Umschalter, Seitenköpfe mit großem Titel, Fortschrittsbalken.
 import { router } from 'expo-router';
 import { type ReactNode, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import {
+  type GestureResponderEvent,
+  Pressable,
+  type PressableProps,
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewStyle,
+} from 'react-native';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
+import { CSS_AUSKLINGEN, DAUER } from './bewegung';
 import { FARBEN } from './farben';
 import { type Symbolname, Zeichen } from './symbole';
 import { Text } from './Text';
+
+const AnimiertDrueckbar = Animated.createAnimatedComponent(Pressable);
+
+/**
+ * Drückbare Fläche, die beim Aufsetzen des Fingers leicht nachgibt (96 %) und beim Loslassen
+ * zurückfedert (Runde 14). Bei „Animationen entfernen“ wird sie stattdessen kurz blasser.
+ */
+export function Federnd({
+  style,
+  onPressIn,
+  onPressOut,
+  ...rest
+}: Omit<PressableProps, 'style'> & { style?: StyleProp<ViewStyle> }) {
+  const [gedrueckt, setGedrueckt] = useState(false);
+  const ruhig = useReducedMotion();
+  return (
+    <AnimiertDrueckbar
+      {...rest}
+      onPressIn={(e: GestureResponderEvent) => {
+        setGedrueckt(true);
+        onPressIn?.(e);
+      }}
+      onPressOut={(e: GestureResponderEvent) => {
+        setGedrueckt(false);
+        onPressOut?.(e);
+      }}
+      style={[
+        style,
+        gedrueckt && ruhig && { opacity: 0.75 },
+        {
+          transform: [{ scale: gedrueckt && !ruhig ? 0.96 : 1 }],
+          transitionProperty: 'transform',
+          transitionDuration: DAUER.druck,
+          transitionTimingFunction: CSS_AUSKLINGEN,
+        },
+      ]}
+    />
+  );
+}
 
 export const RUNDUNG = 22;
 
@@ -69,14 +118,14 @@ export function Knopf({
   symbol?: Symbolname;
 }) {
   return (
-    <Pressable
+    <Federnd
       onPress={onPress}
       disabled={aus}
       accessibilityRole="button"
       accessibilityState={{ disabled: aus }}
-      style={({ pressed }) => [
+      style={[
         art === 'voll' ? stile.knopfVoll : art === 'rahmen' ? stile.knopfRahmen : stile.knopfLeise,
-        (pressed || aus) && { opacity: aus ? 0.4 : 0.8 },
+        aus && { opacity: 0.4 },
       ]}
     >
       {art === 'voll' && <Verlauf />}
@@ -98,7 +147,7 @@ export function Knopf({
       >
         {titel}
       </Text>
-    </Pressable>
+    </Federnd>
   );
 }
 
@@ -115,16 +164,12 @@ export function RundKnopf({
   art?: 'akzent' | 'leise';
 }) {
   return (
-    <Pressable
+    <Federnd
       onPress={onPress}
       hitSlop={10}
       accessibilityRole="button"
       accessibilityLabel={beschriftung}
-      style={({ pressed }) => [
-        stile.rund,
-        art === 'leise' && stile.rundLeise,
-        pressed && { opacity: 0.75 },
-      ]}
+      style={[stile.rund, art === 'leise' && stile.rundLeise]}
     >
       {art === 'akzent' && <Verlauf schraeg />}
       <Zeichen
@@ -132,11 +177,14 @@ export function RundKnopf({
         farbe={art === 'akzent' ? FARBEN.textAufAkzent : FARBEN.text}
         groesse={art === 'akzent' ? 22 : 20}
       />
-    </Pressable>
+    </Federnd>
   );
 }
 
-/** Fortschrittsbalken; der gefüllte Teil zeigt den Akzent-Verlauf. */
+/**
+ * Fortschrittsbalken; der gefüllte Teil zeigt den Akzent-Verlauf. Die Füllung ist immer so
+ * breit wie der Balken und wird nur verschoben, so wächst sie flüssig, ohne Layout pro Bild.
+ */
 export function Balken({
   anteil,
   hoehe = 6,
@@ -147,21 +195,34 @@ export function Balken({
   /** Feste Farbe statt Verlauf, z. B. Grün für „alles gut“. */
   farbe?: string;
 }) {
+  const [breite, setBreite] = useState(0);
   const teil = Math.max(0, Math.min(1, anteil));
   const rund = { height: hoehe, borderRadius: hoehe / 2 };
   return (
-    <View style={[stile.balken, rund]}>
-      {teil > 0 && (
-        <View
+    <View
+      style={[stile.balken, rund]}
+      onLayout={(e) => setBreite(e.nativeEvent.layout.width)}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(teil * 100) }}
+    >
+      {/* Erst nach dem Messen zeigen, sonst wächst der Balken beim Öffnen der Seite sichtbar an. */}
+      {breite > 0 && (
+        <Animated.View
           style={[
             stile.balkenVoll,
             rund,
-            { width: `${teil * 100}%` },
+            {
+              width: breite,
+              transform: [{ translateX: -(1 - teil) * breite }],
+              transitionProperty: 'transform',
+              transitionDuration: DAUER.balken,
+              transitionTimingFunction: CSS_AUSKLINGEN,
+            },
             farbe ? { backgroundColor: farbe } : null,
           ]}
         >
           {!farbe && <Verlauf />}
-        </View>
+        </Animated.View>
       )}
     </View>
   );

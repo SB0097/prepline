@@ -14,7 +14,7 @@ import { einstellungenLaden } from '@/daten/einstellungen';
 import { repertoireDetail } from '@/daten/speicher';
 import type { Sql } from '@/daten/sql';
 import { useGeladen } from '@/daten/useGeladen';
-import { Knopf, RundKnopf, zurueck } from '@/ui/bausteine';
+import { Federnd, Knopf, RundKnopf, zurueck } from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { FARBEN } from '@/ui/farben';
@@ -122,7 +122,7 @@ export function ZugBrowserSeite() {
       </ScrollView>
       <View style={stile.fuss}>
         <View style={stile.navigation}>
-          <Pressable
+          <Federnd
             onPress={() => setPfad(pfad.slice(0, -1))}
             disabled={pfad.length === 0}
             accessibilityRole="button"
@@ -130,8 +130,8 @@ export function ZugBrowserSeite() {
           >
             <Zeichen name="zurueck" farbe={FARBEN.text} groesse={20} />
             <Text style={stile.navText}>zurück</Text>
-          </Pressable>
-          <Pressable
+          </Federnd>
+          <Federnd
             onPress={() => naechster && setPfad([...pfad, naechster])}
             disabled={!naechster}
             accessibilityRole="button"
@@ -139,7 +139,7 @@ export function ZugBrowserSeite() {
           >
             <Text style={stile.navText}>weiter</Text>
             <Zeichen name="weiter" farbe={FARBEN.text} groesse={20} />
-          </Pressable>
+          </Federnd>
         </View>
         <View style={stile.unten}>
           <Knopf

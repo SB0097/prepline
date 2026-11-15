@@ -16,20 +16,24 @@ import {
   tippNehmen,
 } from '@prepline/shared';
 import { useLocalSearchParams } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { type ReactNode, useEffect, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  Vibration,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, {
+  useAnimatedProps,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
-import { Balken, Knopf, RundKnopf, Seitenpunkt, zurueck } from '@/ui/bausteine';
+import { Balken, Federnd, Knopf, RundKnopf, Seitenpunkt, zurueck } from '@/ui/bausteine';
+import { DAUER, erscheinen, GLEITEN } from '@/ui/bewegung';
 import { CoachBauer } from '@/ui/CoachBauer';
 import { type Feldmarkierung, Schachbrett } from '@/ui/brett/Schachbrett';
 import { FARBEN } from '@/ui/farben';
@@ -128,6 +132,22 @@ export function TrainingSeite() {
     return () => clearTimeout(zeit);
   }, [runde, schritt, anzeige, teile, warumOffen]);
 
+  // Falscher Zug: das Brett ruckelt kurz wie ein Kopfschütteln (nicht bei „Animationen entfernen“).
+  const ruhig = useReducedMotion();
+  const wackeln = useSharedValue(0);
+  useEffect(() => {
+    if (anzeige?.art !== 'falsch' || ruhig) return;
+    wackeln.set(
+      withSequence(
+        withTiming(-6, { duration: 50 }),
+        withTiming(5, { duration: 70 }),
+        withTiming(-3, { duration: 60 }),
+        withTiming(0, { duration: 60 }),
+      ),
+    );
+  }, [anzeige, ruhig, wackeln]);
+  const wackelStil = useAnimatedStyle(() => ({ transform: [{ translateX: wackeln.get() }] }));
+
   const gesamt = teile.reduce(
     (n, t) => n + t.plan.faellig.length + t.plan.neu.length + t.plan.angefangen.length,
     0,
@@ -139,12 +159,21 @@ export function TrainingSeite() {
 
   if (!vorbereitung) return <SafeAreaView style={stile.seite} />;
   if (!runde || !teil || !schritt) {
-    return <FertigAnsicht geuebt={erledigt} fehler={fehler} />;
+    return (
+      <FertigAnsicht
+        geuebt={erledigt}
+        fehler={fehler}
+        vibration={vorbereitung.einstellungen.vibration}
+      />
+    );
   }
 
   const einstellungen = vorbereitung.einstellungen;
-  const vibrieren = (muster: number | number[]) => {
-    if (einstellungen.vibration) Vibration.vibrate(muster);
+  // Vibration nur, wenn sie in „Mehr“ eingeschaltet ist; immer zusammen mit der sichtbaren Rückmeldung.
+  const vibrieren = (art: 'richtig' | 'falsch') => {
+    if (!einstellungen.vibration) return;
+    if (art === 'richtig') void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    else void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   };
 
   const zugGespielt = (zug: Brettzug) => {
@@ -157,14 +186,14 @@ export function TrainingSeite() {
     setTippFeld(null);
     const felder = felderAusUci(zug.uci);
     if (ergebnis.rueckmeldung === 'richtig') {
-      vibrieren(20);
+      vibrieren('richtig');
       setAnzeige({ art: 'richtig', fen: zug.fen, felder });
       setTimeout(() => {
         setAnzeige(null);
         setAblauf((a) => uebernehmen(a, ergebnis.runde, teile));
       }, RICHTIG_PAUSE);
     } else {
-      if (ergebnis.rueckmeldung === 'falsch') vibrieren([0, 40, 80, 40]);
+      if (ergebnis.rueckmeldung === 'falsch') vibrieren('falsch');
       setAnzeige({ art: ergebnis.rueckmeldung, felder, san: zug.san });
       setAblauf((a) => uebernehmen(a, ergebnis.runde, teile));
     }
@@ -242,7 +271,7 @@ export function TrainingSeite() {
       </View>
 
       <ScrollView contentContainerStyle={stile.inhalt}>
-        <View style={stile.brett}>
+        <Animated.View style={[stile.brett, wackelStil]}>
           <Schachbrett
             fen={anzeige?.art === 'richtig' ? anzeige.fen : schritt.fen}
             groesse={breite - 32}
@@ -250,12 +279,14 @@ export function TrainingSeite() {
             ansicht={teil.rep.seite}
             figurensatz={einstellungen.figurensatz}
             {...(anzeige?.art !== 'richtig' && vorher && { letzterZug: vorher.uci })}
+            {...(anzeige?.art !== 'richtig' &&
+              vorher?.art === 'gegner' && { gleitZug: vorher.uci })}
             markierungen={markierungen}
             {...(zeigtZug && { pfeil: schritt.uci })}
             bedienbar={eigenerSchritt && anzeige?.art !== 'richtig'}
             onZug={zugGespielt}
           />
-        </View>
+        </Animated.View>
 
         {phase && (
           <View style={stile.phase} accessible accessibilityLabel={phaseText}>
@@ -331,22 +362,17 @@ function Aktion({
   children: ReactNode;
 }) {
   return (
-    <Pressable
+    <Federnd
       onPress={onPress}
       disabled={aus}
       accessibilityRole="button"
       accessibilityLabel={beschriftung ?? titel}
       accessibilityState={{ disabled: aus, expanded: aktiv }}
-      style={({ pressed }) => [
-        stile.aktion,
-        aktiv && stile.aktionAktiv,
-        aus && { opacity: 0.35 },
-        pressed && { opacity: 0.75 },
-      ]}
+      style={[stile.aktion, aktiv && stile.aktionAktiv, aus && { opacity: 0.35 }]}
     >
       {children}
       <Text style={[stile.aktionText, aktiv && { color: FARBEN.akzent }]}>{titel}</Text>
-    </Pressable>
+    </Federnd>
   );
 }
 
@@ -369,6 +395,7 @@ function Meldung({
   if (anzeige?.art === 'richtig') {
     return (
       <Rueckmeldung
+        key="richtig"
         farbe={FARBEN.richtig}
         zeichen="haken"
         titel="Richtig"
@@ -379,6 +406,7 @@ function Meldung({
   if (anzeige?.art === 'falsch') {
     return (
       <Rueckmeldung
+        key="falsch"
         farbe={FARBEN.falsch}
         zeichen="kreuz"
         titel="Nicht ganz"
@@ -389,6 +417,7 @@ function Meldung({
   if (anzeige?.art === 'alternative') {
     return (
       <Rueckmeldung
+        key="alternative"
         farbe={FARBEN.hinweis}
         zeichen="ausruf"
         titel="Nicht dein Hauptzug"
@@ -432,6 +461,7 @@ function Rueckmeldung({
   titel: string;
   text: string;
 }) {
+  const ruhig = useReducedMotion();
   const pfad = {
     haken: 'M6 12.5l4 4L18 8.5',
     kreuz: 'M8 8l8 8M16 8l-8 8',
@@ -439,7 +469,11 @@ function Rueckmeldung({
   }[zeichen];
   return (
     <View style={[stile.meldung, stile.rueckmeldung]} accessibilityLiveRegion="polite">
-      <View style={[stile.kreis, { backgroundColor: farbe }]}>
+      {/* Der Kreis wächst beim Erscheinen kurz auf (ohne Überschwingen). */}
+      <Animated.View
+        style={[stile.kreis, { backgroundColor: farbe }]}
+        entering={erscheinen({ dauer: DAUER.meldung, skala: ruhig ? 1 : 0.6 })}
+      >
         <Svg width={20} height={20} viewBox="0 0 24 24">
           <Path
             d={pfad}
@@ -449,14 +483,17 @@ function Rueckmeldung({
             fill="none"
           />
         </Svg>
-      </View>
-      <View style={stile.rueckmeldungText}>
+      </Animated.View>
+      <Animated.View style={stile.rueckmeldungText} entering={erscheinen({ dauer: DAUER.meldung })}>
         <Text style={[stile.meldungTitel, { color: farbe }]}>{titel}</Text>
         <Text style={stile.meldungText}>{text}</Text>
-      </View>
+      </Animated.View>
     </View>
   );
 }
+
+const HAKEN_LAENGE = 20;
+const AnimierterPfad = Animated.createAnimatedComponent(Path);
 
 function Zugliste({ schritte }: { schritte: readonly Schritt[] }) {
   if (schritte.length === 0) return <Text style={stile.zuglisteLeer}>Noch keine Züge</Text>;
@@ -475,31 +512,69 @@ function Zugliste({ schritte }: { schritte: readonly Schritt[] }) {
   );
 }
 
-function FertigAnsicht({ geuebt, fehler }: { geuebt: number; fehler: number }) {
+/**
+ * Ende des Trainings (Runde 14): Kreis taucht auf, der Haken zeichnet sich, der Text kommt
+ * von unten. Bei „Animationen entfernen“ wird nur eingeblendet.
+ */
+function FertigAnsicht({
+  geuebt,
+  fehler,
+  vibration,
+}: {
+  geuebt: number;
+  fehler: number;
+  vibration: boolean;
+}) {
+  const ruhig = useReducedMotion();
+  const offen = useSharedValue(ruhig ? 0 : HAKEN_LAENGE);
+  useEffect(() => {
+    if (vibration && geuebt > 0) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    if (!ruhig) offen.set(withDelay(150, withTiming(0, { duration: 350, easing: GLEITEN })));
+    // Nur einmal beim Erscheinen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const hakenProps = useAnimatedProps(() => ({ strokeDashoffset: offen.get() }));
   return (
     <SafeAreaView style={stile.seite}>
       <View style={stile.fertig}>
-        <View style={stile.fertigKreis}>
+        <Animated.View
+          style={stile.fertigKreis}
+          entering={erscheinen({ dauer: 250, skala: ruhig ? 1 : 0.9 })}
+        >
           <Svg width={54} height={54} viewBox="0 0 24 24">
-            <Path
+            <AnimierterPfad
               d="M5 12.5l4.5 4.5L19 7.5"
               fill="none"
               stroke={FARBEN.richtig}
               strokeWidth={2.6}
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeDasharray={HAKEN_LAENGE}
+              animatedProps={hakenProps}
             />
           </Svg>
-        </View>
-        <Text style={stile.fertigTitel}>
-          {geuebt === 0 ? 'Heute ist nichts mehr dran' : 'Für heute geschafft'}
-        </Text>
-        {geuebt > 0 && (
-          <Text style={stile.meldungText}>
-            {geuebt === 1 ? '1 Stellung geübt' : `${geuebt} Stellungen geübt`}
-            {fehler > 0 ? ` · ${fehler} Fehler` : ' · ohne Fehler'}
+        </Animated.View>
+        {/* Text kommt 8 Pixel von unten, kurz nach dem Kreis. */}
+        <Animated.View
+          style={stile.fertigTexte}
+          entering={erscheinen({
+            dauer: 250,
+            verzoegerung: ruhig ? 0 : 250,
+            vonY: ruhig ? 0 : 8,
+          })}
+        >
+          <Text style={stile.fertigTitel}>
+            {geuebt === 0 ? 'Heute ist nichts mehr dran' : 'Für heute geschafft'}
           </Text>
-        )}
+          {geuebt > 0 && (
+            <Text style={stile.meldungText}>
+              {geuebt === 1 ? '1 Stellung geübt' : `${geuebt} Stellungen geübt`}
+              {fehler > 0 ? ` · ${fehler} Fehler` : ' · ohne Fehler'}
+            </Text>
+          )}
+        </Animated.View>
       </View>
       <View style={stile.fertigKnopf}>
         <Knopf titel="Fertig" onPress={zurueck} />
@@ -611,5 +686,6 @@ const stile = StyleSheet.create({
     marginBottom: 20,
   },
   fertigKnopf: { marginHorizontal: 20 },
+  fertigTexte: { alignItems: 'center', gap: 10 },
   fertigTitel: { color: FARBEN.text, fontSize: 24, fontWeight: '700' },
 });
