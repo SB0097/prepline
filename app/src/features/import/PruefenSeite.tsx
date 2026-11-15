@@ -1,7 +1,7 @@
 import { hauptlinieEnde, importVorschau, type Seite } from '@prepline/shared';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
@@ -10,7 +10,7 @@ import { passendeRepertoires, pgnImportieren, type RepertoireKopf } from '@/date
 import { Knopf, RUNDUNG, Umschalter, ZurueckKopf } from '@/ui/bausteine';
 import { type Figurensatz, FIGURENSATZ_STANDARD } from '@/ui/brett/figuren';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen } from '@/ui/thema';
 import { Text, TextInput } from '@/ui/Text';
 
 import { entwurfHolen } from './entwurf';
@@ -27,6 +27,7 @@ const SEITEN = [
 const MAX_HINWEISE = 3;
 
 export function PruefenSeite() {
+  const stile = useStile();
   const db = useDatenbank();
   const [figurensatz, setFigurensatz] = useState<Figurensatz>(FIGURENSATZ_STANDARD);
   const [entwurf] = useState(entwurfHolen);
@@ -184,6 +185,7 @@ function Auswahl({
   aktiv: boolean;
   onPress: () => void;
 }) {
+  const stile = useStile();
   return (
     <Pressable
       onPress={onPress}
@@ -199,30 +201,30 @@ function Auswahl({
   );
 }
 
-const stile = StyleSheet.create({
+const useStile = stileErstellen((F) => ({
   seite: {
     flex: 1,
-    backgroundColor: FARBEN.hintergrund,
+    backgroundColor: F.hintergrund,
     paddingHorizontal: 20,
     paddingBottom: 16,
   },
   inhalt: { paddingBottom: 24 },
   brett: { alignSelf: 'center', borderRadius: 10, overflow: 'hidden', marginTop: 8 },
   mitte: { textAlign: 'center', marginTop: 12 },
-  leise: { color: FARBEN.textLeise, fontSize: 14, lineHeight: 20 },
-  leiseKlein: { color: FARBEN.textLeise, fontSize: 13, lineHeight: 19 },
-  label: { color: FARBEN.textLeise, fontSize: 13, marginTop: 22, marginBottom: 8 },
+  leise: { color: F.textLeise, fontSize: 14, lineHeight: 20 },
+  leiseKlein: { color: F.textLeise, fontSize: 13, lineHeight: 19 },
+  label: { color: F.textLeise, fontSize: 13, marginTop: 22, marginBottom: 8 },
   eingabe: {
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.linie,
+    backgroundColor: F.karte,
+    borderColor: F.linie,
     borderWidth: 1,
     borderRadius: 16,
-    color: FARBEN.text,
+    color: F.text,
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  gruppe: { backgroundColor: FARBEN.karte, borderRadius: RUNDUNG, paddingHorizontal: 16 },
+  gruppe: { backgroundColor: F.karte, borderRadius: RUNDUNG, paddingHorizontal: 16 },
   auswahl: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -230,9 +232,9 @@ const stile = StyleSheet.create({
     minHeight: 50,
     paddingVertical: 8,
   },
-  kreis: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: FARBEN.textLeise },
-  kreisAktiv: { borderWidth: 6, borderColor: FARBEN.akzent },
-  auswahlText: { flex: 1, color: FARBEN.text, fontSize: 15 },
+  kreis: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: F.textLeise },
+  kreisAktiv: { borderWidth: 6, borderColor: F.akzent },
+  auswahlText: { flex: 1, color: F.text, fontSize: 15 },
   warnung: {
     marginTop: 22,
     padding: 16,
@@ -242,7 +244,7 @@ const stile = StyleSheet.create({
     borderColor: 'rgba(245, 181, 74, 0.5)',
     backgroundColor: 'rgba(245, 181, 74, 0.12)',
   },
-  warnungTitel: { color: FARBEN.hinweis, fontSize: 14, fontWeight: '700' },
+  warnungTitel: { color: F.hinweis, fontSize: 14, fontWeight: '700' },
   leer: { marginTop: 40, gap: 8 },
-  leerTitel: { color: FARBEN.text, fontSize: 20, fontWeight: '700' },
-});
+  leerTitel: { color: F.text, fontSize: 20, fontWeight: '700' },
+}));

@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 import { Text } from './Text';
 
-import { FARBEN } from './farben';
+import { stileErstellen, useFarben } from './thema';
 import { type Symbolname, Zeichen } from './symbole';
 
 const SYMBOLE: Record<string, Symbolname> = {
@@ -24,6 +24,8 @@ const PILLE = { breite: 60, hoehe: 32 };
 const ABSTAND_UNTEN = 20;
 
 export function Reiterleiste({ state, descriptors, emitter, navigateToTab }: BottomTabBarProps) {
+  const F = useFarben();
+  const stile = useStile();
   // Höhe der Systemleiste direkt vom System, die Leiste reicht farbig bis ganz nach unten.
   const unten = useSafeAreaInsets().bottom;
   return (
@@ -34,7 +36,7 @@ export function Reiterleiste({ state, descriptors, emitter, navigateToTab }: Bot
       {state.routes.map((route, index) => {
         const aktiv = index === state.index;
         const titel = descriptors[route.key]?.options.title ?? route.name;
-        const farbe = aktiv ? FARBEN.akzent : FARBEN.textLeise;
+        const farbe = aktiv ? F.akzent : F.textLeise;
         const druecken = () => {
           const ereignis = emitter.emit({
             type: 'tabPress',
@@ -60,7 +62,7 @@ export function Reiterleiste({ state, descriptors, emitter, navigateToTab }: Bot
                     width={PILLE.breite}
                     height={PILLE.hoehe}
                     rx={PILLE.hoehe / 2}
-                    fill={FARBEN.akzentFlaeche}
+                    fill={F.akzentFlaeche}
                   />
                 </Svg>
               )}
@@ -74,12 +76,12 @@ export function Reiterleiste({ state, descriptors, emitter, navigateToTab }: Bot
   );
 }
 
-const stile = StyleSheet.create({
+const useStile = stileErstellen((F) => ({
   leiste: {
     flexDirection: 'row',
-    backgroundColor: FARBEN.leiste,
+    backgroundColor: F.leiste,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: FARBEN.linie,
+    borderTopColor: F.linie,
     paddingTop: 8,
   },
   punkt: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
@@ -93,4 +95,4 @@ const stile = StyleSheet.create({
   },
   text: { fontSize: 12 },
   textAktiv: { fontWeight: '700' },
-});
+}));

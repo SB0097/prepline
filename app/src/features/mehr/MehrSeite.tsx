@@ -1,7 +1,7 @@
 import { HAEPPCHEN_BEREICH, NEU_PRO_TAG_BEREICH } from '@prepline/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, ScrollView, Switch, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
@@ -22,16 +22,18 @@ import {
   Glanz,
   RUNDUNG,
   SeitenTitel,
-  TIEFE,
+  tiefe,
   TIPPFLAECHE,
+  Umschalter,
 } from '@/ui/bausteine';
 import { FIGURENSAETZE, type Figurensatz } from '@/ui/brett/figuren';
 import { FIGUREN_SVG } from '@/ui/brett/figurenSvg';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen, useFarben, useThema } from '@/ui/thema';
 import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
-// Mehr-Seite (Skizze M2, 11.11.2026): Figuren als Vorschau-Kacheln, darunter die Trainings-Einstellungen,
-// dann Daten (Sicherung) und Info (Über Prepline, Datenschutz) aus Skizze M8.
+// Mehr-Seite (Skizze M2, 11.11.2026): Figuren als Vorschau-Kacheln, Darstellung (hell/dunkel,
+// Runde 17), darunter die Trainings-Einstellungen, dann Daten (Sicherung) und Info (Über Prepline,
+// Datenschutz) aus Skizze M8.
 const letzteSicherungLaden = (sql: Sql) =>
   einstellungLesen<number | null>(sql, 'letzteSicherung', null);
 
@@ -46,11 +48,13 @@ const NAMEN: Record<Figurensatz, string> = {
 };
 
 export function MehrSeite() {
+  const stile = useStile();
   const db = useDatenbank();
   const geladen = useGeladen(einstellungenLaden);
   const letzteSicherung = useGeladen(letzteSicherungLaden);
   const [geaendert, setGeaendert] = useState<Einstellungen | null>(null);
   const e = geaendert ?? geladen;
+  const thema = useThema();
 
   const aendern = <K extends keyof Einstellungen>(schluessel: K, wert: Einstellungen[K]) => {
     if (!e || db.status !== 'bereit') return;
@@ -74,6 +78,20 @@ export function MehrSeite() {
           />
         ))}
       </View>
+      <Abschnitt titel="Darstellung" />
+      {/* Wirkt sofort: das Farbschema wechselt, ohne die Seite neu zu laden. */}
+      <Umschalter
+        werte={[
+          { wert: 'automatisch', titel: 'Automatisch' },
+          { wert: 'hell', titel: 'Hell' },
+          { wert: 'dunkel', titel: 'Dunkel' },
+        ]}
+        wert={thema.modus}
+        onWahl={(modus) => {
+          thema.setModus(modus);
+          aendern('erscheinungsbild', modus);
+        }}
+      />
       <Abschnitt titel="Training" />
       <View style={stile.gruppe}>
         <ZaehlerZeile
@@ -133,6 +151,8 @@ function FigurenKachel({
   aktiv: boolean;
   onPress: () => void;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   return (
     <Federnd
       onPress={onPress}
@@ -142,10 +162,10 @@ function FigurenKachel({
       style={[stile.figurKachel, aktiv && stile.figurKachelAktiv]}
     >
       <View style={stile.vorschau}>
-        <View style={[stile.vorschauFeld, { backgroundColor: FARBEN.brettHell }]}>
+        <View style={[stile.vorschauFeld, { backgroundColor: F.brettHell }]}>
           <SvgXml xml={FIGUREN_SVG[satz].wK} width={36} height={36} />
         </View>
-        <View style={[stile.vorschauFeld, { backgroundColor: FARBEN.brettDunkel }]}>
+        <View style={[stile.vorschauFeld, { backgroundColor: F.brettDunkel }]}>
           <SvgXml xml={FIGUREN_SVG[satz].bN} width={36} height={36} />
         </View>
       </View>
@@ -178,6 +198,7 @@ function ZaehlerZeile({
   testID: string;
   trenner?: boolean;
 }) {
+  const stile = useStile();
   return (
     <View style={[stile.zeile, trenner && stile.trenner, hinweis ? stile.zeileHoch : null]}>
       <View style={stile.zeilenTexte}>
@@ -229,6 +250,8 @@ function SchalterZeile({
   wert: boolean;
   onWert: (wert: boolean) => void;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   return (
     <Pressable
       onPress={() => onWert(!wert)}
@@ -241,16 +264,16 @@ function SchalterZeile({
       <View pointerEvents="none" importantForAccessibility="no-hide-descendants">
         <Switch
           value={wert}
-          trackColor={{ false: FARBEN.linie, true: FARBEN.akzent }}
-          thumbColor={wert ? FARBEN.textAufAkzent : FARBEN.textLeise}
+          trackColor={{ false: F.linie, true: F.akzent }}
+          thumbColor={wert ? F.textAufAkzent : F.textLeise}
         />
       </View>
     </Pressable>
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32 },
   figuren: { flexDirection: 'row', gap: 8 },
   figurKachel: {
@@ -259,19 +282,19 @@ const stile = StyleSheet.create({
     gap: 10,
     paddingVertical: 14,
     borderRadius: 18,
-    backgroundColor: FARBEN.karte,
-    ...TIEFE,
+    backgroundColor: F.karte,
+    ...tiefe(F),
     borderWidth: 1,
-    borderColor: FARBEN.linie,
+    borderColor: F.linie,
   },
-  figurKachelAktiv: { borderWidth: 2.5, borderColor: FARBEN.akzent },
+  figurKachelAktiv: { borderWidth: 2.5, borderColor: F.akzent },
   vorschau: { flexDirection: 'row' },
   vorschauFeld: { width: 36, height: 36 },
-  figurName: { color: FARBEN.text, fontSize: 14 },
-  figurNameAktiv: { color: FARBEN.akzent, fontWeight: '700' },
+  figurName: { color: F.text, fontSize: 14 },
+  figurNameAktiv: { color: F.akzent, fontWeight: '700' },
   gruppe: {
-    backgroundColor: FARBEN.karte,
-    ...TIEFE,
+    backgroundColor: F.karte,
+    ...tiefe(F),
     borderRadius: RUNDUNG,
     paddingHorizontal: 20,
     overflow: 'hidden',
@@ -282,16 +305,16 @@ const stile = StyleSheet.create({
     justifyContent: 'space-between',
     minHeight: 54,
   },
-  trenner: { borderTopWidth: 1, borderTopColor: FARBEN.linie },
+  trenner: { borderTopWidth: 1, borderTopColor: F.linie },
   zeileHoch: { paddingVertical: 12 },
   zeilenTexte: { flex: 1, gap: 3, paddingRight: 12 },
-  zeilenText: { color: FARBEN.text, fontSize: 16 },
-  zeilenHinweis: { color: FARBEN.textLeise, fontSize: 12.5, lineHeight: 17 },
+  zeilenText: { color: F.text, fontSize: 16 },
+  zeilenHinweis: { color: F.textLeise, fontSize: 12.5, lineHeight: 17 },
   zaehlerAus: { opacity: 0.35 },
   zaehler: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: FARBEN.linie,
+    backgroundColor: F.linie,
     borderRadius: TIPPFLAECHE / 2,
     overflow: 'hidden',
   },
@@ -302,13 +325,13 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  zaehlerGedrueckt: { backgroundColor: FARBEN.karteHell },
-  zaehlerZeichen: { color: FARBEN.akzent, fontSize: 20 },
+  zaehlerGedrueckt: { backgroundColor: F.karteHell },
+  zaehlerZeichen: { color: F.akzent, fontSize: 20 },
   zaehlerWert: {
-    color: FARBEN.text,
+    color: F.text,
     fontSize: 16,
     fontWeight: '700',
     minWidth: 22,
     textAlign: 'center',
   },
-});
+}));

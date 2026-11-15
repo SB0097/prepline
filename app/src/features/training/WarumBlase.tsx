@@ -1,8 +1,8 @@
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoachBauer } from '@/ui/CoachBauer';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen } from '@/ui/thema';
 import { Text } from '@/ui/Text';
 
 /** Platz für die Knopfreihe des Trainings, damit der Bauer nicht darüber liegt. */
@@ -21,6 +21,7 @@ export function WarumBlase({
   text: string;
   onSchliessen: () => void;
 }) {
+  const stile = useStile();
   const unten = useSafeAreaInsets().bottom;
   return (
     <Modal
@@ -50,7 +51,7 @@ export function WarumBlase({
   );
 }
 
-const stile = StyleSheet.create({
+const useStile = stileErstellen((F) => ({
   hintergrund: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -58,8 +59,8 @@ const stile = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   blase: {
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.akzentRand,
+    backgroundColor: F.karte,
+    borderColor: F.akzentRand,
     borderWidth: 1,
     borderRadius: 22,
     padding: 18,
@@ -70,14 +71,14 @@ const stile = StyleSheet.create({
     height: 18,
     marginLeft: 34,
     marginTop: -10,
-    backgroundColor: FARBEN.karte,
+    backgroundColor: F.karte,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderColor: FARBEN.akzentRand,
+    borderColor: F.akzentRand,
     transform: [{ rotate: '45deg' }],
   },
-  titel: { color: FARBEN.akzent, fontSize: 16, fontWeight: '700' },
-  text: { color: FARBEN.text, fontSize: 15, lineHeight: 22 },
+  titel: { color: F.akzent, fontSize: 16, fontWeight: '700' },
+  text: { color: F.text, fontSize: 15, lineHeight: 22 },
   bauerZeile: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8, marginLeft: 12 },
-  hinweis: { color: FARBEN.textLeise, fontSize: 14 },
-});
+  hinweis: { color: F.textLeise, fontSize: 14 },
+}));

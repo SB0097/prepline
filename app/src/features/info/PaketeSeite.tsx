@@ -1,15 +1,16 @@
 import { router } from 'expo-router';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { RUNDUNG, TIEFE, ZurueckKopf } from '@/ui/bausteine';
-import { FARBEN } from '@/ui/farben';
+import { RUNDUNG, tiefe, ZurueckKopf } from '@/ui/bausteine';
+import { stileErstellen } from '@/ui/thema';
 
 import { PAKETE } from './lizenzenDaten';
 import { Zeile } from './UeberSeite';
 
 // Alle Open-Source-Pakete, die in der App stecken (erzeugt mit `npm run lizenzen -w app`).
 export function PaketeSeite() {
+  const stile = useStile();
   return (
     <SafeAreaView style={stile.seite}>
       <View style={stile.rand}>
@@ -40,11 +41,11 @@ export function PaketeSeite() {
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund },
   rand: { paddingHorizontal: 20 },
   liste: { paddingHorizontal: 20, paddingBottom: 32 },
-  karte: { backgroundColor: FARBEN.karte, ...TIEFE, paddingHorizontal: 18, overflow: 'hidden' },
+  karte: { backgroundColor: F.karte, ...tiefe(F), paddingHorizontal: 18, overflow: 'hidden' },
   oben: { borderTopLeftRadius: RUNDUNG, borderTopRightRadius: RUNDUNG },
   unten: { borderBottomLeftRadius: RUNDUNG, borderBottomRightRadius: RUNDUNG },
-});
+}));

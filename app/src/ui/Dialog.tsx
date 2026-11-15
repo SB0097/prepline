@@ -1,10 +1,10 @@
 // Dialoge im Stil „Mitternacht“: Rückfrage (z. B. vor dem Löschen), Texteingabe und ein kleines Menü.
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, TextInput } from './Text';
 
-import { FARBEN } from './farben';
+import { stileErstellen, useFarben } from './thema';
 
 function Huelle({
   sichtbar,
@@ -15,6 +15,7 @@ function Huelle({
   onSchliessen: () => void;
   children: React.ReactNode;
 }) {
+  const stile = useStile();
   return (
     <Modal
       visible={sichtbar}
@@ -47,6 +48,8 @@ function Knoepfe({
   onAbbrechen: () => void;
   onBestaetigen: () => void;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   return (
     <View style={stile.knoepfe}>
       <Pressable
@@ -62,7 +65,7 @@ function Knoepfe({
         accessibilityRole="button"
         style={[
           stile.knopf,
-          { backgroundColor: gefaehrlich ? FARBEN.falsch : FARBEN.akzent },
+          { backgroundColor: gefaehrlich ? F.falsch : F.akzent },
           aus && { opacity: 0.4 },
         ]}
       >
@@ -89,6 +92,7 @@ export function BestaetigenDialog({
   onAbbrechen: () => void;
   onBestaetigen: () => void;
 }) {
+  const stile = useStile();
   return (
     <Huelle sichtbar={sichtbar} onSchliessen={onAbbrechen}>
       <Text style={stile.titel}>{titel}</Text>
@@ -117,6 +121,7 @@ export function EingabeDialog({
   onAbbrechen: () => void;
   onSpeichern: (wert: string) => void;
 }) {
+  const stile = useStile();
   const [wert, setWert] = useState(anfangswert);
   // Beim Öffnen mit dem aktuellen Wert anfangen.
   const [warSichtbar, setWarSichtbar] = useState(sichtbar);
@@ -160,6 +165,8 @@ export function Menue({
   punkte: readonly Menuepunkt[];
   onSchliessen: () => void;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   const oben = useSafeAreaInsets().top;
   return (
     <Modal
@@ -191,7 +198,7 @@ export function Menue({
                   pressed && stile.menuepunktGedrueckt,
                 ]}
               >
-                <Text style={[stile.menueText, p.gefaehrlich && { color: FARBEN.falsch }]}>
+                <Text style={[stile.menueText, p.gefaehrlich && { color: F.falsch }]}>
                   {p.titel}
                 </Text>
               </Pressable>
@@ -203,31 +210,31 @@ export function Menue({
   );
 }
 
-const stile = StyleSheet.create({
+const useStile = stileErstellen((F) => ({
   hintergrund: {
     flex: 1,
-    backgroundColor: FARBEN.schleier,
+    backgroundColor: F.schleier,
     justifyContent: 'center',
     padding: 30,
   },
-  karte: { backgroundColor: FARBEN.karte, borderRadius: 26, padding: 22, gap: 12 },
-  titel: { color: FARBEN.text, fontSize: 19, fontWeight: '700', textAlign: 'center' },
-  text: { color: FARBEN.textLeise, fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  karte: { backgroundColor: F.karte, borderRadius: 26, padding: 22, gap: 12 },
+  titel: { color: F.text, fontSize: 19, fontWeight: '700', textAlign: 'center' },
+  text: { color: F.textLeise, fontSize: 14, lineHeight: 20, textAlign: 'center' },
   eingabe: {
-    backgroundColor: FARBEN.hintergrund,
-    borderColor: FARBEN.linie,
+    backgroundColor: F.hintergrund,
+    borderColor: F.linie,
     borderWidth: 1,
     borderRadius: 16,
-    color: FARBEN.text,
+    color: F.text,
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   knoepfe: { flexDirection: 'row', gap: 12, marginTop: 8 },
   knopf: { flex: 1, borderRadius: 20, paddingVertical: 13, alignItems: 'center' },
-  knopfLeise: { borderWidth: 2, borderColor: FARBEN.linie },
-  knopfLeiseText: { color: FARBEN.text, fontSize: 15 },
-  knopfText: { color: FARBEN.hintergrund, fontSize: 15, fontWeight: '700' },
+  knopfLeise: { borderWidth: 2, borderColor: F.linie },
+  knopfLeiseText: { color: F.text, fontSize: 15 },
+  knopfText: { color: F.hintergrund, fontSize: 15, fontWeight: '700' },
   // Menü (Runde 18): Seite leicht abgedunkelt, Menü mit Schatten, damit es sich klar abhebt.
   menueHintergrund: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.45)' },
   menueSchatten: {
@@ -235,17 +242,17 @@ const stile = StyleSheet.create({
     right: 16,
     minWidth: 200,
     borderRadius: 18,
-    boxShadow: `0px 12px 32px ${FARBEN.schatten}`,
+    boxShadow: `0px 12px 32px ${F.schatten}`,
   },
   menue: {
-    backgroundColor: FARBEN.karteHell,
-    borderColor: FARBEN.linie,
+    backgroundColor: F.karteHell,
+    borderColor: F.linie,
     borderWidth: 1,
     borderRadius: 18,
     overflow: 'hidden',
   },
   menuepunkt: { paddingHorizontal: 20, minHeight: 52, justifyContent: 'center' },
-  menuepunktGedrueckt: { backgroundColor: FARBEN.linie },
-  trenner: { borderTopWidth: 1, borderTopColor: FARBEN.linie },
-  menueText: { color: FARBEN.text, fontSize: 16 },
-});
+  menuepunktGedrueckt: { backgroundColor: F.linie },
+  trenner: { borderTopWidth: 1, borderTopColor: F.linie },
+  menueText: { color: F.text, fontSize: 16 },
+}));

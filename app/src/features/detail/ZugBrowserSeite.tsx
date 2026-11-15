@@ -7,7 +7,7 @@ import {
 } from '@prepline/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { einstellungenLaden } from '@/daten/einstellungen';
@@ -17,7 +17,7 @@ import { useGeladen } from '@/daten/useGeladen';
 import { Federnd, Knopf, RundKnopf, zurueck } from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { CoachBauer } from '@/ui/CoachBauer';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen, useFarben } from '@/ui/thema';
 import { Zeichen } from '@/ui/symbole';
 import { Text } from '@/ui/Text';
 
@@ -25,6 +25,8 @@ import { Text } from '@/ui/Text';
 // eine Linie Zug für Zug ansehen.
 // Startet kurz vor der Stelle, an der die gewählte Linie abzweigt.
 export function ZugBrowserSeite() {
+  const F = useFarben();
+  const stile = useStile();
   const { id, linie } = useLocalSearchParams<{ id: string; linie?: string }>();
   const repId = Number(id);
   const breite = useWindowDimensions().width;
@@ -128,7 +130,7 @@ export function ZugBrowserSeite() {
             accessibilityRole="button"
             style={[stile.navKnopf, pfad.length === 0 && stile.aus]}
           >
-            <Zeichen name="zurueck" farbe={FARBEN.text} groesse={20} />
+            <Zeichen name="zurueck" farbe={F.text} groesse={20} />
             <Text style={stile.navText}>zurück</Text>
           </Federnd>
           <Federnd
@@ -138,7 +140,7 @@ export function ZugBrowserSeite() {
             style={[stile.navKnopf, !naechster && stile.aus]}
           >
             <Text style={stile.navText}>weiter</Text>
-            <Zeichen name="weiter" farbe={FARBEN.text} groesse={20} />
+            <Zeichen name="weiter" farbe={F.text} groesse={20} />
           </Federnd>
         </View>
         <View style={stile.unten}>
@@ -154,17 +156,17 @@ export function ZugBrowserSeite() {
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund },
   kopf: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   kopfMitte: { flex: 1, alignItems: 'center', gap: 2, paddingHorizontal: 8 },
   kopfPlatz: { width: 40 },
-  titel: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
-  unterTitel: { color: FARBEN.textLeise, fontSize: 13, fontWeight: '500' },
+  titel: { color: F.text, fontSize: 17, fontWeight: '700' },
+  unterTitel: { color: F.textLeise, fontSize: 13, fontWeight: '500' },
   inhalt: { paddingBottom: 16 },
   brett: { marginHorizontal: 16, marginTop: 10 },
   zugfolge: {
-    color: FARBEN.textLeise,
+    color: F.textLeise,
     fontSize: 14,
     lineHeight: 20,
     marginHorizontal: 20,
@@ -175,8 +177,8 @@ const stile = StyleSheet.create({
     marginTop: 12,
     padding: 14,
     borderRadius: 16,
-    backgroundColor: FARBEN.karte,
-    color: FARBEN.text,
+    backgroundColor: F.karte,
+    color: F.text,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -187,15 +189,15 @@ const stile = StyleSheet.create({
     marginTop: 12,
     padding: 14,
     borderRadius: 16,
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.akzentRand,
+    backgroundColor: F.karte,
+    borderColor: F.akzentRand,
     borderWidth: 1,
   },
   coachText: { flex: 1, gap: 4 },
-  coachTitel: { color: FARBEN.akzent, fontSize: 14, fontWeight: '700' },
-  coachErklaerung: { color: FARBEN.text, fontSize: 14, lineHeight: 20 },
+  coachTitel: { color: F.akzent, fontSize: 14, fontWeight: '700' },
+  coachErklaerung: { color: F.text, fontSize: 14, lineHeight: 20 },
   abschnitt: {
-    color: FARBEN.textLeise,
+    color: F.textLeise,
     fontSize: 11.5,
     fontWeight: '700',
     letterSpacing: 1.2,
@@ -205,16 +207,16 @@ const stile = StyleSheet.create({
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 20 },
   chip: {
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.rand,
+    backgroundColor: F.karte,
+    borderColor: F.rand,
     borderWidth: 1,
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 9,
   },
-  chipAktiv: { backgroundColor: FARBEN.akzent },
-  chipText: { color: FARBEN.text, fontSize: 15 },
-  chipTextAktiv: { color: FARBEN.textAufAkzent, fontWeight: '700' },
+  chipAktiv: { backgroundColor: F.akzent },
+  chipText: { color: F.text, fontSize: 15 },
+  chipTextAktiv: { color: F.textAufAkzent, fontWeight: '700' },
   fuss: { paddingBottom: 12 },
   navigation: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 8 },
   navKnopf: {
@@ -223,13 +225,13 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: FARBEN.karte,
-    borderColor: FARBEN.rand,
+    backgroundColor: F.karte,
+    borderColor: F.rand,
     borderWidth: 1,
     borderRadius: 22,
     height: 56,
   },
-  navText: { color: FARBEN.text, fontSize: 16, fontWeight: '600' },
+  navText: { color: F.text, fontSize: 16, fontWeight: '600' },
   aus: { opacity: 0.4 },
   unten: { marginHorizontal: 16, marginTop: 10 },
-});
+}));

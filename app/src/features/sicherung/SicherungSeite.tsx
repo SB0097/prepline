@@ -1,7 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
@@ -12,9 +12,9 @@ import {
   type SicherungsInhalt,
   sicherungPruefen,
 } from '@/daten/sicherung';
-import { Knopf, RUNDUNG, TIEFE, ZurueckKopf } from '@/ui/bausteine';
+import { Knopf, RUNDUNG, tiefe, ZurueckKopf } from '@/ui/bausteine';
 import { BestaetigenDialog } from '@/ui/Dialog';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen, useFarben } from '@/ui/thema';
 import { Text } from '@/ui/Text';
 
 // Sicherung (Skizze M8, Serkan 11.11.2026): speichern/teilen, laden (ersetzt alles), PGN-Export.
@@ -28,6 +28,8 @@ const GRUND_TEXT = {
 type Meldung = { art: 'ok' | 'fehler'; text: string };
 
 export function SicherungSeite() {
+  const F = useFarben();
+  const stile = useStile();
   const db = useDatenbank();
   const [beschaeftigt, setBeschaeftigt] = useState(false);
   const [meldung, setMeldung] = useState<Meldung | null>(null);
@@ -132,10 +134,7 @@ export function SicherungSeite() {
         </Karte>
         {meldung && (
           <Text
-            style={[
-              stile.meldung,
-              { color: meldung.art === 'ok' ? FARBEN.richtig : FARBEN.falsch },
-            ]}
+            style={[stile.meldung, { color: meldung.art === 'ok' ? F.richtig : F.falsch }]}
             accessibilityLiveRegion="polite"
           >
             {meldung.text}
@@ -168,6 +167,7 @@ function Karte({
   text: string;
   children: React.ReactNode;
 }) {
+  const stile = useStile();
   return (
     <View style={stile.karte}>
       <Text style={stile.titel}>{titel}</Text>
@@ -177,20 +177,20 @@ function Karte({
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund },
   rand: { paddingHorizontal: 20 },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32, gap: 14 },
-  karte: { backgroundColor: FARBEN.karte, ...TIEFE, borderRadius: RUNDUNG, padding: 20, gap: 6 },
-  titel: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
-  text: { color: FARBEN.textLeise, fontSize: 14, lineHeight: 20 },
+  karte: { backgroundColor: F.karte, ...tiefe(F), borderRadius: RUNDUNG, padding: 20, gap: 6 },
+  titel: { color: F.text, fontSize: 17, fontWeight: '700' },
+  text: { color: F.textLeise, fontSize: 14, lineHeight: 20 },
   knopf: { marginTop: 10 },
   meldung: { fontSize: 14, lineHeight: 20, textAlign: 'center' },
   hinweis: {
-    color: FARBEN.textLeise,
+    color: F.textLeise,
     fontSize: 13,
     lineHeight: 19,
     textAlign: 'center',
     marginTop: 4,
   },
-});
+}));

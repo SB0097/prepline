@@ -1,9 +1,9 @@
 import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen } from '@/ui/thema';
 import { Text } from '@/ui/Text';
 
 import { FIGUREN_LIZENZEN, LIZENZTEXTE, PAKETE, SCHRIFT_LIZENZ } from './lizenzenDaten';
@@ -30,6 +30,7 @@ export function lizenzFinden(
 }
 
 export function LizenzSeite() {
+  const stile = useStile();
   const { paket, figur, schrift } = useLocalSearchParams<{
     paket?: string;
     figur?: string;
@@ -53,11 +54,11 @@ export function LizenzSeite() {
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund },
   rand: { paddingHorizontal: 20 },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32, gap: 12 },
-  titel: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
-  karte: { backgroundColor: FARBEN.karte, borderRadius: RUNDUNG, padding: 16 },
-  text: { color: FARBEN.text, fontSize: 12, lineHeight: 18, fontFamily: 'monospace' },
-});
+  titel: { color: F.text, fontSize: 17, fontWeight: '700' },
+  karte: { backgroundColor: F.karte, borderRadius: RUNDUNG, padding: 16 },
+  text: { color: F.text, fontSize: 12, lineHeight: 18, fontFamily: 'monospace' },
+}));

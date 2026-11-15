@@ -2,19 +2,20 @@ import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { router } from 'expo-router';
 import { type ReactNode, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 
-import { Federnd, RUNDUNG, TIEFE, ZurueckKopf } from '@/ui/bausteine';
+import { Federnd, RUNDUNG, tiefe, ZurueckKopf } from '@/ui/bausteine';
 import { CoachBauer } from '@/ui/CoachBauer';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen, useFarben } from '@/ui/thema';
 import { Text } from '@/ui/Text';
 
 import { entwurfSetzen } from './entwurf';
 
 // Import Schritt 1 (Skizze 11.11.2026): aus der Sammlung, PGN-Datei oder Text einfügen.
 export function QuelleSeite() {
+  const stile = useStile();
   const [fehler, setFehler] = useState<string | null>(null);
 
   const dateiWaehlen = async () => {
@@ -78,6 +79,7 @@ function Wahl({
   hervorgehoben?: boolean;
   onPress: () => void;
 }) {
+  const stile = useStile();
   return (
     <Federnd
       onPress={onPress}
@@ -94,47 +96,49 @@ function Wahl({
 }
 
 function DateiSymbol() {
+  const F = useFarben();
   return (
     <Svg width={20} height={20} viewBox="0 0 20 20">
-      <Path d="M5 2h7l4 4v12H5z" fill={FARBEN.akzent} />
-      <Path d="M12 2v4h4" fill={FARBEN.textAufAkzent} opacity={0.4} />
+      <Path d="M5 2h7l4 4v12H5z" fill={F.akzent} />
+      <Path d="M12 2v4h4" fill={F.textAufAkzent} opacity={0.4} />
     </Svg>
   );
 }
 
 function TextSymbol() {
+  const F = useFarben();
   return (
     <Svg width={20} height={20} viewBox="0 0 20 20">
-      <Rect x={4} y={3} width={12} height={15} rx={2} fill={FARBEN.akzent} />
-      <Rect x={7} y={1.5} width={6} height={3.5} rx={1} fill={FARBEN.textAufAkzent} />
+      <Rect x={4} y={3} width={12} height={15} rx={2} fill={F.akzent} />
+      <Rect x={7} y={1.5} width={6} height={3.5} rx={1} fill={F.textAufAkzent} />
     </Svg>
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund, paddingHorizontal: 20 },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund, paddingHorizontal: 20 },
   inhalt: { gap: 14, marginTop: 24 },
   wahl: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    backgroundColor: FARBEN.karte,
-    ...TIEFE,
+    backgroundColor: F.karte,
+    ...tiefe(F),
     borderRadius: RUNDUNG,
     padding: 20,
   },
-  hervorgehoben: { borderWidth: 2, borderColor: FARBEN.akzent },
+  hervorgehoben: { borderWidth: 2, borderColor: F.akzent },
   symbol: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: FARBEN.akzentFlaeche,
+    backgroundColor: F.akzentFlaeche,
     alignItems: 'center',
     justifyContent: 'center',
   },
   wahlText: { flex: 1, gap: 4 },
-  wahlTitel: { color: FARBEN.text, fontSize: 17, fontWeight: '700' },
-  wahlUnter: { color: FARBEN.textLeise, fontSize: 13 },
-  fehler: { color: FARBEN.falsch, fontSize: 14 },
-  hinweis: { color: FARBEN.textLeise, fontSize: 14, lineHeight: 21, marginTop: 16 },
-});
+  wahlTitel: { color: F.text, fontSize: 17, fontWeight: '700' },
+  wahlUnter: { color: F.textLeise, fontSize: 13 },
+  fehler: { color: F.falsch, fontSize: 14 },
+  hinweis: { color: F.textLeise, fontSize: 14, lineHeight: 21, marginTop: 16 },
+}));

@@ -1,16 +1,18 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Knopf, RUNDUNG, ZurueckKopf } from '@/ui/bausteine';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen, useFarben } from '@/ui/thema';
 import { TextInput } from '@/ui/Text';
 
 import { entwurfSetzen } from './entwurf';
 
 // Import: kopierte Züge oder PGN-Text einfügen.
 export function TextSeite() {
+  const F = useFarben();
+  const stile = useStile();
   const [text, setText] = useState('');
   return (
     <SafeAreaView style={stile.seite}>
@@ -24,7 +26,7 @@ export function TextSeite() {
           autoCorrect={false}
           autoCapitalize="none"
           placeholder="Züge oder PGN hier einfügen, z. B. 1. e4 e5 2. Nf3 Nc6"
-          placeholderTextColor={FARBEN.textLeise}
+          placeholderTextColor={F.textLeise}
           style={stile.eingabe}
           accessibilityLabel="Züge oder PGN"
         />
@@ -41,10 +43,10 @@ export function TextSeite() {
   );
 }
 
-const stile = StyleSheet.create({
+const useStile = stileErstellen((F) => ({
   seite: {
     flex: 1,
-    backgroundColor: FARBEN.hintergrund,
+    backgroundColor: F.hintergrund,
     paddingHorizontal: 20,
   },
   // Abstand unten innerhalb des Ausweichbereichs, damit „Weiter“ nicht an der Tastatur klebt.
@@ -54,9 +56,9 @@ const stile = StyleSheet.create({
     marginVertical: 16,
     padding: 16,
     borderRadius: RUNDUNG,
-    backgroundColor: FARBEN.karte,
-    color: FARBEN.text,
+    backgroundColor: F.karte,
+    color: F.text,
     fontSize: 15,
     textAlignVertical: 'top',
   },
-});
+}));

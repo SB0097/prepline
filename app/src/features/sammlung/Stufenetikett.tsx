@@ -1,12 +1,13 @@
 import type { Stufe } from '@prepline/shared';
 import { StyleSheet, View } from 'react-native';
 
-import { STUFE_FARBE, STUFE_TEXT } from '@/ui/stufen';
+import { stufeFarbe, STUFE_TEXT } from '@/ui/stufen';
+import { useFarben } from '@/ui/thema';
 import { Text } from '@/ui/Text';
 
 /** Kleines farbiges Etikett: Einsteiger (grün), Fortgeschritten (gelb), Profi (rot). */
 export function Stufenetikett({ stufe }: { stufe: Stufe }) {
-  const farbe = STUFE_FARBE[stufe];
+  const farbe = stufeFarbe(useFarben(), stufe);
   return (
     <View style={[stile.etikett, { backgroundColor: `${farbe}29` }]}>
       <Text style={[stile.text, { color: farbe }]}>{STUFE_TEXT[stufe]}</Text>

@@ -1,18 +1,20 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { einstellungenLaden } from '@/daten/einstellungen';
 import { useGeladen } from '@/daten/useGeladen';
 import { Knopf } from '@/ui/bausteine';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen, useFarben } from '@/ui/thema';
 import { Text } from '@/ui/Text';
 
 import { entwurfSetzen } from './entwurf';
 
 // Import Schritt 3 (Skizze 11.11.2026): Bestätigung mit Weg zum Training oder zum Repertoire.
 export function FertigSeite() {
+  const F = useFarben();
+  const stile = useStile();
   const { name, neu } = useLocalSearchParams<{ name: string; neu: string }>();
   const einstellungen = useGeladen(einstellungenLaden);
   const anzahl = Number(neu) || 0;
@@ -31,7 +33,7 @@ export function FertigSeite() {
             <Path
               d="M5 12.5l4.5 4.5L19 7.5"
               fill="none"
-              stroke={FARBEN.richtig}
+              stroke={F.richtig}
               strokeWidth={2.6}
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -56,10 +58,10 @@ export function FertigSeite() {
   );
 }
 
-const stile = StyleSheet.create({
+const useStile = stileErstellen((F) => ({
   seite: {
     flex: 1,
-    backgroundColor: FARBEN.hintergrund,
+    backgroundColor: F.hintergrund,
     paddingHorizontal: 20,
     paddingBottom: 16,
   },
@@ -73,6 +75,6 @@ const stile = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 24,
   },
-  titel: { color: FARBEN.text, fontSize: 24, fontWeight: '700', textAlign: 'center' },
-  leise: { color: FARBEN.textLeise, fontSize: 15, textAlign: 'center' },
-});
+  titel: { color: F.text, fontSize: 24, fontWeight: '700', textAlign: 'center' },
+  leise: { color: F.textLeise, fontSize: 15, textAlign: 'center' },
+}));

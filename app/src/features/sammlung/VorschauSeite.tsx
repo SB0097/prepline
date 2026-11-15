@@ -8,7 +8,7 @@ import {
 } from '@prepline/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
@@ -19,7 +19,7 @@ import { useGeladen } from '@/daten/useGeladen';
 import { Abschnitt, Knopf, ZurueckKopf } from '@/ui/bausteine';
 import { Schachbrett } from '@/ui/brett/Schachbrett';
 import { CoachBauer } from '@/ui/CoachBauer';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen } from '@/ui/thema';
 import { Text } from '@/ui/Text';
 
 import { Stufenetikett } from './Stufenetikett';
@@ -34,6 +34,7 @@ async function laden(sql: Sql) {
 }
 
 export function VorschauSeite() {
+  const stile = useStile();
   const { id } = useLocalSearchParams<{ id: string }>();
   const db = useDatenbank();
   const daten = useGeladen(laden);
@@ -121,18 +122,18 @@ export function VorschauSeite() {
   );
 }
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund },
   rand: { paddingHorizontal: 20 },
   inhalt: { paddingHorizontal: 20, paddingBottom: 24 },
   brett: { alignSelf: 'center', borderRadius: 10, overflow: 'hidden', marginTop: 4 },
   mitte: { alignItems: 'center', gap: 8, marginTop: 14, marginBottom: 18 },
-  karte: { backgroundColor: FARBEN.karte, borderRadius: 22, padding: 18, gap: 10 },
+  karte: { backgroundColor: F.karte, borderRadius: 22, padding: 18, gap: 10 },
   kartenKopf: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  kartenTitel: { color: FARBEN.text, fontSize: 16, fontWeight: '700' },
-  text: { color: FARBEN.text, fontSize: 15, lineHeight: 22 },
+  kartenTitel: { color: F.text, fontSize: 16, fontWeight: '700' },
+  text: { color: F.text, fontSize: 15, lineHeight: 22 },
   linien: { gap: 6, marginTop: -4 },
-  linie: { color: FARBEN.text, fontSize: 14 },
-  leise: { color: FARBEN.textLeise, fontSize: 14 },
+  linie: { color: F.text, fontSize: 14 },
+  leise: { color: F.textLeise, fontSize: 14 },
   fuss: { paddingHorizontal: 20, paddingBottom: 12, paddingTop: 8 },
-});
+}));

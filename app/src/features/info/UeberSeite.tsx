@@ -1,11 +1,11 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Abschnitt, RUNDUNG, TIEFE, Zeilenknopf, ZurueckKopf } from '@/ui/bausteine';
+import { Abschnitt, RUNDUNG, tiefe, Zeilenknopf, ZurueckKopf } from '@/ui/bausteine';
 import { CoachBauer } from '@/ui/CoachBauer';
-import { FARBEN } from '@/ui/farben';
+import { stileErstellen, useFarben } from '@/ui/thema';
 import { Zeichen } from '@/ui/symbole';
 import { Text } from '@/ui/Text';
 
@@ -19,6 +19,7 @@ export const APP_VERSION = Constants.expoConfig?.version ?? '–';
 const HERVORGEHOBEN = ['chess.js', 'ts-fsrs', 'react-native', 'expo'];
 
 export function UeberSeite() {
+  const stile = useStile();
   const wichtig = HERVORGEHOBEN.map((n) => PAKETE.find((p) => p[0] === n)).filter(
     (p): p is (typeof PAKETE)[number] => p !== undefined,
   );
@@ -97,12 +98,14 @@ export function Zeile({
   einzug?: number;
   onPress: () => void;
 }) {
+  const F = useFarben();
+  const stile = useStile();
   return (
     <Zeilenknopf
       onPress={onPress}
       accessibilityRole="button"
       einzug={einzug}
-      flaeche={FARBEN.karteHell}
+      flaeche={F.karteHell}
       rund={0}
     >
       <View style={[stile.zeile, !erste && stile.trenner]}>
@@ -110,7 +113,7 @@ export function Zeile({
           {titel}
         </Text>
         {rechts ? <Text style={stile.rechts}>{rechts}</Text> : null}
-        <Zeichen name="weiter" farbe={FARBEN.textLeise} groesse={16} />
+        <Zeichen name="weiter" farbe={F.textLeise} groesse={16} />
       </View>
     </Zeilenknopf>
   );
@@ -118,24 +121,24 @@ export function Zeile({
 
 const GRUPPE_EINZUG = 18;
 
-const stile = StyleSheet.create({
-  seite: { flex: 1, backgroundColor: FARBEN.hintergrund },
+const useStile = stileErstellen((F) => ({
+  seite: { flex: 1, backgroundColor: F.hintergrund },
   rand: { paddingHorizontal: 20 },
   inhalt: { paddingHorizontal: 20, paddingBottom: 32 },
   kopf: { alignItems: 'center', gap: 6, marginTop: 8 },
-  name: { color: FARBEN.text, fontSize: 24, fontWeight: '700', marginTop: 8 },
-  leise: { color: FARBEN.textLeise, fontSize: 13 },
-  satz: { color: FARBEN.text, fontSize: 14, marginTop: 8, textAlign: 'center' },
+  name: { color: F.text, fontSize: 24, fontWeight: '700', marginTop: 8 },
+  leise: { color: F.textLeise, fontSize: 13 },
+  satz: { color: F.text, fontSize: 14, marginTop: 8, textAlign: 'center' },
   gruppe: {
-    backgroundColor: FARBEN.karte,
-    ...TIEFE,
+    backgroundColor: F.karte,
+    ...tiefe(F),
     borderRadius: RUNDUNG,
     paddingHorizontal: GRUPPE_EINZUG,
     overflow: 'hidden',
   },
   zeile: { flexDirection: 'row', alignItems: 'center', minHeight: 50, gap: 10 },
-  trenner: { borderTopWidth: 1, borderTopColor: FARBEN.linie },
-  zeilenText: { flex: 1, color: FARBEN.text, fontSize: 15 },
-  rechts: { color: FARBEN.textLeise, fontSize: 12 },
-  hinweis: { color: FARBEN.textLeise, fontSize: 12, textAlign: 'center', marginTop: 14 },
-});
+  trenner: { borderTopWidth: 1, borderTopColor: F.linie },
+  zeilenText: { flex: 1, color: F.text, fontSize: 15 },
+  rechts: { color: F.textLeise, fontSize: 12 },
+  hinweis: { color: F.textLeise, fontSize: 12, textAlign: 'center', marginTop: 14 },
+}));
