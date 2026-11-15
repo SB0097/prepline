@@ -19,10 +19,16 @@ describe('Sammlung', () => {
     expect(ids).toEqual([
       'italienisch-evans',
       'london',
+      'schottisch',
       'damengambit',
+      'spanisch',
+      'englisch',
       'skandinavisch',
       'caro-kann',
+      'franzoesisch',
+      'slawisch',
       'sizilianisch-najdorf',
+      'koenigsindisch',
     ]);
   });
 

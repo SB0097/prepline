@@ -5,10 +5,16 @@ import { pgnLesen } from '../pgn/lesen.ts';
 import { type Baum, stellungOhneZaehler, zusammenfuehren } from '../pgn/zusammenfuehren.ts';
 import { CARO_KANN } from './eroeffnungen/carokann.ts';
 import { DAMENGAMBIT } from './eroeffnungen/damengambit.ts';
+import { ENGLISCH } from './eroeffnungen/englisch.ts';
+import { FRANZOESISCH } from './eroeffnungen/franzoesisch.ts';
 import { ITALIENISCH } from './eroeffnungen/italienisch.ts';
+import { KOENIGSINDISCH } from './eroeffnungen/koenigsindisch.ts';
 import { LONDON } from './eroeffnungen/london.ts';
 import { NAJDORF } from './eroeffnungen/najdorf.ts';
+import { SCHOTTISCH } from './eroeffnungen/schottisch.ts';
 import { SKANDINAVISCH } from './eroeffnungen/skandinavisch.ts';
+import { SLAWISCH } from './eroeffnungen/slawisch.ts';
+import { SPANISCH } from './eroeffnungen/spanisch.ts';
 import type { Sammlungseintrag, Stufe, Zweisprachig } from './typen.ts';
 
 export * from './typen.ts';
@@ -17,10 +23,16 @@ export * from './typen.ts';
 export const SAMMLUNG: readonly Sammlungseintrag[] = [
   ITALIENISCH,
   LONDON,
+  SCHOTTISCH,
   DAMENGAMBIT,
+  SPANISCH,
+  ENGLISCH,
   SKANDINAVISCH,
   CARO_KANN,
+  FRANZOESISCH,
+  SLAWISCH,
   NAJDORF,
+  KOENIGSINDISCH,
 ];
 
 export const STUFEN: readonly Stufe[] = ['einsteiger', 'fortgeschritten', 'profi'];
