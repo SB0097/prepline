@@ -18,7 +18,7 @@ import {
 import { useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { type ReactNode, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
@@ -29,7 +29,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useDatenbank } from '@/daten/DatenAnbieter';
 import {
@@ -284,6 +284,9 @@ export function TrainingSeite() {
   const vorBlaettern = () =>
     setBlick(gezeigtBis + 1 >= runde.index ? null : { linie: runde.linie, zuege: gezeigtBis + 1 });
   const blickLetzter = blaettert ? runde.linie[blickZuege - 1] : undefined;
+  // Zug in der Zugliste angetippt: Stellung nach diesem Zug zeigen (der letzte = aktuell).
+  const zugWaehlen = (zuege: number) =>
+    setBlick(zuege >= runde.index ? null : { linie: runde.linie, zuege });
 
   return (
     <SafeAreaView style={stile.seite}>
@@ -381,7 +384,14 @@ export function TrainingSeite() {
             <Text style={stile.zumTrainingText}>Zurück zum Training</Text>
           </Federnd>
         )}
-        {zuegeOffen && <Zugliste schritte={runde.linie.slice(0, runde.index)} />}
+        {zuegeOffen && (
+          <Zugliste
+            schritte={runde.linie.slice(0, runde.index)}
+            gezeigt={blaettert ? gezeigtBis : null}
+            aus={anzeige?.art === 'richtig'}
+            onWahl={zugWaehlen}
+          />
+        )}
         {coachText && !blaettert && (
           <View style={stile.coach}>
             <CoachBauer groesse={54} />
@@ -539,7 +549,9 @@ function Meldung({
         {schritt.art !== 'neu' && <Seitenpunkt seite={seite} groesse={12} />}
         <Text style={stile.meldungTitelGross}>{titel}</Text>
       </View>
-      <Text style={stile.meldungText}>{phase ? `${phase} · ${text}` : text}</Text>
+      <Text style={stile.meldungText} numberOfLines={2}>
+        {phase ? `${phase} · ${text}` : text}
+      </Text>
     </View>
   );
 }
@@ -561,45 +573,86 @@ function Rueckmeldung({
     kreuz: 'M8 8l8 8M16 8l-8 8',
     ausruf: 'M12 6.5v7M12 17.5v0.01',
   }[zeichen];
+  // Gleicher Aufbau wie „Dein Zug“ (Titelzeile + eine kleine Zeile), damit beim Wechsel nichts
+  // springt (Runde 18). Der Kreis ist eine Grafik und wächst beim Erscheinen kurz auf.
   return (
-    <View style={[stile.meldung, stile.rueckmeldung]} accessibilityLiveRegion="polite">
-      {/* Der Kreis wächst beim Erscheinen kurz auf (ohne Überschwingen). */}
-      <Animated.View
-        style={[stile.kreis, { backgroundColor: farbe }]}
-        entering={erscheinen({ dauer: DAUER.meldung, skala: ruhig ? 1 : 0.6 })}
-      >
-        <Svg width={20} height={20} viewBox="0 0 24 24">
-          <Path
-            d={pfad}
-            stroke={FARBEN.hintergrund}
-            strokeWidth={3}
-            strokeLinecap="round"
-            fill="none"
-          />
-        </Svg>
-      </Animated.View>
-      <Animated.View style={stile.rueckmeldungText} entering={erscheinen({ dauer: DAUER.meldung })}>
-        <Text style={[stile.meldungTitel, { color: farbe }]}>{titel}</Text>
-        <Text style={stile.meldungText}>{text}</Text>
-      </Animated.View>
+    <View style={stile.meldung} accessibilityLiveRegion="polite">
+      <View style={stile.titelZeile}>
+        <Animated.View entering={erscheinen({ dauer: DAUER.meldung, skala: ruhig ? 1 : 0.6 })}>
+          <Svg width={KREIS} height={KREIS} viewBox="0 0 24 24">
+            <Circle cx={12} cy={12} r={12} fill={farbe} />
+            <Path
+              d={pfad}
+              stroke={FARBEN.hintergrund}
+              strokeWidth={3}
+              strokeLinecap="round"
+              fill="none"
+            />
+          </Svg>
+        </Animated.View>
+        <Animated.View entering={erscheinen({ dauer: DAUER.meldung })}>
+          <Text style={[stile.meldungTitelGross, { color: farbe }]}>{titel}</Text>
+        </Animated.View>
+      </View>
+      <Text style={stile.meldungText} numberOfLines={2}>
+        {text}
+      </Text>
     </View>
   );
 }
 
+/** Kreis vor „Richtig“ / „Nicht ganz“, so groß wie der Punkt vor „Dein Zug“ plus etwas Luft. */
+const KREIS = 22;
+
 const HAKEN_LAENGE = 20;
 const AnimierterPfad = Animated.createAnimatedComponent(Path);
 
-function Zugliste({ schritte }: { schritte: readonly Schritt[] }) {
+/**
+ * Bisherige Züge der Linie. Ein Zug lässt sich antippen, dann zeigt das Brett die Stellung nach
+ * diesem Zug (Runde 18); der gerade gezeigte Zug ist hervorgehoben.
+ */
+function Zugliste({
+  schritte,
+  gezeigt,
+  aus,
+  onWahl,
+}: {
+  schritte: readonly Schritt[];
+  /** Anzahl der gerade gezeigten Züge beim Zurückblättern, sonst null (= aktuell). */
+  gezeigt: number | null;
+  aus: boolean;
+  onWahl: (zuege: number) => void;
+}) {
   if (schritte.length === 0) return <Text style={stile.zuglisteLeer}>Noch keine Züge</Text>;
+  const markiert = (gezeigt ?? schritte.length) - 1;
   return (
     <View style={stile.zugliste}>
       {schritte.map((s, i) => {
         const [, farbe] = s.fen.split(' ');
         const text = farbe === 'w' || i === 0 ? zugText(s) : sanAufDeutsch(s.san);
+        const aktiv = i === markiert;
         return (
-          <View key={i} style={stile.zugPille}>
-            <Text style={stile.zugPilleText}>{text}</Text>
-          </View>
+          <Pressable
+            key={i}
+            onPress={() => onWahl(i + 1)}
+            disabled={aus}
+            accessibilityRole="button"
+            accessibilityLabel={`Stellung nach ${zugText(s)} zeigen`}
+            accessibilityState={{ selected: aktiv }}
+            style={stile.zugTippflaeche}
+          >
+            {({ pressed }) => (
+              <View
+                style={[
+                  stile.zugPille,
+                  aktiv && stile.zugPilleAktiv,
+                  pressed && stile.zugPilleGedrueckt,
+                ]}
+              >
+                <Text style={[stile.zugPilleText, aktiv && stile.zugPilleTextAktiv]}>{text}</Text>
+              </View>
+            )}
+          </Pressable>
         );
       })}
     </View>
@@ -715,13 +768,16 @@ const stile = StyleSheet.create({
   // Status ruhiger (Runde 18): links „Dein Zug“ mit Zeile darunter, rechts ◀ ▶.
   statusZeile: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
     marginHorizontal: 20,
     marginTop: 20,
   },
-  statusText: { flex: 1 },
-  blaettern: { flexDirection: 'row', gap: 8 },
+  // Feste Mindesthöhe (Titel + zwei kleine Zeilen): Wechsel zwischen „Dein Zug“, „Richtig“
+  // und „Nicht ganz“ verschiebt nichts darunter.
+  statusText: { flex: 1, minHeight: 72, justifyContent: 'flex-start' },
+  // Pfeile mittig zur Titelzeile.
+  blaettern: { flexDirection: 'row', gap: 8, marginTop: -8 },
   blickPunkt: { width: 12, height: 12, borderRadius: 6, backgroundColor: FARBEN.textLeise },
   zumTraining: {
     alignSelf: 'flex-start',
@@ -734,28 +790,23 @@ const stile = StyleSheet.create({
     backgroundColor: FARBEN.akzentFlaeche,
   },
   zumTrainingText: { color: FARBEN.akzentHell, fontSize: 15, fontWeight: '600' },
-  zugliste: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginHorizontal: 20, marginTop: 14 },
+  zugliste: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: 17, marginTop: 6 },
   zuglisteLeer: { color: FARBEN.textLeise, fontSize: 14, marginHorizontal: 20, marginTop: 14 },
+  // Sichtbar ist die kleine Pille, antippbar sind 48 dp Höhe (Android-Mindestmaß).
+  zugTippflaeche: { minHeight: TIPPFLAECHE, justifyContent: 'center', paddingHorizontal: 3 },
   zugPille: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
     borderRadius: 14,
     backgroundColor: FARBEN.karte,
   },
-  zugPilleText: { color: FARBEN.text, fontSize: 13 },
+  zugPilleText: { color: FARBEN.text, fontSize: 14 },
+  zugPilleAktiv: { backgroundColor: FARBEN.akzentFlaeche },
+  zugPilleGedrueckt: { backgroundColor: FARBEN.karteHell },
+  zugPilleTextAktiv: { color: FARBEN.akzentHell, fontWeight: '700' },
   meldung: { gap: 4 },
-  rueckmeldung: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   titelZeile: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   meldungTitelGross: { color: FARBEN.text, fontSize: 20, fontWeight: '600', letterSpacing: -0.2 },
-  rueckmeldungText: { flex: 1, gap: 2 },
-  kreis: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  meldungTitel: { color: FARBEN.text, fontSize: 20, fontWeight: '600' },
   meldungText: { color: FARBEN.textLeise, fontSize: 14 },
   kommentar: {
     marginHorizontal: 16,
