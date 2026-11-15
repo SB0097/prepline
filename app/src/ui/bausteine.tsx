@@ -244,11 +244,14 @@ export function RundKnopf({
   onPress,
   beschriftung,
   art = 'leise',
+  aus = false,
 }: {
   symbol: Symbolname;
   onPress: () => void;
   beschriftung: string;
   art?: 'akzent' | 'leise';
+  /** Gerade nicht möglich: blass und nicht antippbar. */
+  aus?: boolean;
 }) {
   // Sichtbar bleibt der Kreis (40/44 dp), antippbar sind immer 48 dp (Android-Mindestmaß).
   // Der negative Rand gleicht die größere Fläche aus, das Layout bleibt gleich.
@@ -257,9 +260,11 @@ export function RundKnopf({
   return (
     <Federnd
       onPress={onPress}
+      disabled={aus}
       accessibilityRole="button"
       accessibilityLabel={beschriftung}
-      style={[stile.rundFlaeche, { margin: ueberstand }]}
+      accessibilityState={{ disabled: aus }}
+      style={[stile.rundFlaeche, { margin: ueberstand }, aus && { opacity: 0.35 }]}
     >
       <View style={[stile.rund, art === 'leise' && stile.rundLeise]}>
         {art === 'akzent' && <Verlauf schraeg von={FARBEN.knopfVon} bis={FARBEN.knopfBis} />}

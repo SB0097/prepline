@@ -40,6 +40,7 @@ import {
   RundKnopf,
   Seitenpunkt,
   TIEFE,
+  TIPPFLAECHE,
   zurueck,
 } from '@/ui/bausteine';
 import { DAUER, erscheinen, GLEITEN } from '@/ui/bewegung';
@@ -59,9 +60,10 @@ import {
   type Trainingsvorbereitung,
 } from './trainingDaten';
 
-// Trainingsbildschirm (Layout „Ruhig & groß“, Serkan 14.11.2026): runder Schließen-Knopf, Name und
-// „Zug x von y“, dünner Fortschrittsbalken, Brett mit Rand, darunter „Dein Zug“ groß und unten
-// eine Leiste mit drei gleich großen Knöpfen Tipp / Züge / Warum?.
+// Trainingsbildschirm (Layout „Ruhig & groß“ 14.11.2026, Runde 18 „Ruhig mit Pfeilen“ 15.11.2026):
+// runder Schließen-Knopf, Name und „Zug x von y“, dünner Fortschrittsbalken, Brett im Rahmen,
+// darunter „Dein Zug“ mit der Lernphase in der kleinen Zeile und rechts ◀ ▶ zum Blättern,
+// unten eine Leiste mit Tipp / Züge / Warum?.
 // Rückmeldungen grün/rot/gelb wie am 11.11. abgestimmt.
 
 type Anzeige =
@@ -114,6 +116,8 @@ export function TrainingSeite() {
   const [tippFeld, setTippFeld] = useState<Feld | null>(null);
   const [zuegeOffen, setZuegeOffen] = useState(false);
   const [warumOffen, setWarumOffen] = useState(false);
+  // Zurückblättern (Runde 18): wie viele Züge der laufenden Linie gerade zu sehen sind.
+  const [blick, setBlick] = useState<{ linie: readonly Schritt[]; zuege: number } | null>(null);
 
   // Tagesplan laden und die erste Runde starten.
   useEffect(() => {
@@ -134,16 +138,22 @@ export function TrainingSeite() {
   const { runde, teilIndex, erledigtVorher } = ablauf;
   const teil = teile[teilIndex];
   const schritt = runde ? aktuellerSchritt(runde) : null;
+  // Zurückgeblättert: Anzahl der gezeigten Züge, sonst null. Gilt nur für die Linie, in der
+  // geblättert wurde; beginnt eine neue Linie, ist man automatisch wieder beim Training.
+  const blickZuege =
+    runde && blick && blick.linie === runde.linie && blick.zuege < runde.index ? blick.zuege : null;
 
-  // Gegnerzug automatisch spielen.
+  // Gegnerzug automatisch spielen (nicht, solange man zurückblättert).
   useEffect(() => {
-    if (!runde || schritt?.art !== 'gegner' || anzeige || warumOffen) return;
+    if (!runde || schritt?.art !== 'gegner' || anzeige || warumOffen || blickZuege !== null) {
+      return;
+    }
     const zeit = setTimeout(
       () => setAblauf((a) => uebernehmen(a, gegnerZiehen(runde), teile)),
       GEGNER_PAUSE,
     );
     return () => clearTimeout(zeit);
-  }, [runde, schritt, anzeige, teile, warumOffen]);
+  }, [runde, schritt, anzeige, teile, warumOffen, blickZuege]);
 
   // Falscher Zug: das Brett ruckelt kurz wie ein Kopfschütteln (nicht bei „Animationen entfernen“).
   const ruhig = useReducedMotion();
@@ -228,11 +238,11 @@ export function TrainingSeite() {
   const kommentar = anzeige?.art === 'richtig' ? schritt.kommentar : vorher?.kommentar;
   const eigenerSchritt = schritt.art !== 'gegner';
 
-  // Anzeige der Lernphase („NEU · 2 VON 3“ / „AUS DEM KOPF · 1 VON 3“).
+  // Lernphase klein in der Zeile unter „Dein Zug“ („Neu 2/3“, „Aus dem Kopf“), Runde 18.
   const phase = lernphase(runde);
   const phaseText = phase
-    ? `${phase.art === 'neu' ? 'NEU' : 'AUS DEM KOPF'} · ${phase.nummer} VON ${phase.anzahl}`
-    : '';
+    ? `${phase.art === 'neu' ? 'Neu' : 'Aus dem Kopf'}${phase.anzahl > 1 ? ` ${phase.nummer}/${phase.anzahl}` : ''}`
+    : undefined;
   // Bei mitgelieferten Eröffnungen steht die Erklärung des Coachs direkt unter einem neuen Zug.
   const coachText =
     schritt.art === 'neu'
@@ -265,6 +275,16 @@ export function TrainingSeite() {
     anzeige?.art !== 'richtig';
   const warumMoeglich = Boolean(warum) && !coachText;
 
+  // Vor- und Zurückblättern in der laufenden Linie. Das Brett zeigt dann eine frühere Stellung
+  // und ist nicht spielbar; Tipp und Warum? ruhen, der Gegner wartet.
+  const blaettert = blickZuege !== null;
+  const gezeigtBis = blickZuege ?? runde.index;
+  const zurueckMoeglich = gezeigtBis > 0 && anzeige?.art !== 'richtig';
+  const zurueckBlaettern = () => setBlick({ linie: runde.linie, zuege: gezeigtBis - 1 });
+  const vorBlaettern = () =>
+    setBlick(gezeigtBis + 1 >= runde.index ? null : { linie: runde.linie, zuege: gezeigtBis + 1 });
+  const blickLetzter = blaettert ? runde.linie[blickZuege - 1] : undefined;
+
   return (
     <SafeAreaView style={stile.seite}>
       <View style={stile.kopf}>
@@ -288,32 +308,81 @@ export function TrainingSeite() {
         onLayout={(e) => setBereichHoehe(e.nativeEvent.layout.height)}
       >
         <Animated.View style={[stile.brett, wackelStil]}>
-          <Schachbrett
-            fen={anzeige?.art === 'richtig' ? anzeige.fen : schritt.fen}
-            groesse={brett}
-            rundung={14}
-            ansicht={teil.rep.seite}
-            figurensatz={einstellungen.figurensatz}
-            {...(anzeige?.art !== 'richtig' && vorher && { letzterZug: vorher.uci })}
-            {...(anzeige?.art !== 'richtig' &&
-              vorher?.art === 'gegner' && { gleitZug: vorher.uci })}
-            markierungen={markierungen}
-            {...(zeigtZug && { pfeil: schritt.uci })}
-            bedienbar={eigenerSchritt && anzeige?.art !== 'richtig'}
-            onZug={zugGespielt}
-          />
+          {blaettert ? (
+            <Schachbrett
+              fen={runde.linie[blickZuege]?.fen ?? schritt.fen}
+              groesse={brett}
+              rundung={14}
+              ansicht={teil.rep.seite}
+              figurensatz={einstellungen.figurensatz}
+              {...(blickLetzter && { letzterZug: blickLetzter.uci })}
+              bedienbar={false}
+            />
+          ) : (
+            <Schachbrett
+              fen={anzeige?.art === 'richtig' ? anzeige.fen : schritt.fen}
+              groesse={brett}
+              rundung={14}
+              ansicht={teil.rep.seite}
+              figurensatz={einstellungen.figurensatz}
+              {...(anzeige?.art !== 'richtig' && vorher && { letzterZug: vorher.uci })}
+              {...(anzeige?.art !== 'richtig' &&
+                vorher?.art === 'gegner' && { gleitZug: vorher.uci })}
+              markierungen={markierungen}
+              {...(zeigtZug && { pfeil: schritt.uci })}
+              bedienbar={eigenerSchritt && anzeige?.art !== 'richtig'}
+              onZug={zugGespielt}
+            />
+          )}
         </Animated.View>
 
-        {phase && (
-          <View style={stile.phase} accessible accessibilityLabel={phaseText}>
-            <Text style={stile.phaseText}>{phaseText}</Text>
+        <View style={stile.statusZeile}>
+          <View style={stile.statusText}>
+            {blaettert ? (
+              <View style={stile.meldung} accessibilityLiveRegion="polite">
+                <View style={stile.titelZeile}>
+                  <View style={stile.blickPunkt} />
+                  <Text style={stile.meldungTitelGross}>
+                    {blickLetzter ? `Nach ${zugText(blickLetzter)}` : 'Ausgangsstellung'}
+                  </Text>
+                </View>
+                <Text style={stile.meldungText}>Du schaust zurück</Text>
+              </View>
+            ) : (
+              <Meldung
+                schritt={schritt}
+                anzeige={anzeige}
+                seite={teil.rep.seite}
+                phase={phaseText}
+              />
+            )}
           </View>
-        )}
-        <View style={[stile.statusZeile, phase && stile.statusZeileNah]}>
-          <Meldung schritt={schritt} anzeige={anzeige} seite={teil.rep.seite} />
+          <View style={stile.blaettern}>
+            <RundKnopf
+              symbol="zurueck"
+              beschriftung="Einen Zug zurück"
+              aus={!zurueckMoeglich}
+              onPress={zurueckBlaettern}
+            />
+            <RundKnopf
+              symbol="weiter"
+              beschriftung="Einen Zug vor"
+              aus={!blaettert}
+              onPress={vorBlaettern}
+            />
+          </View>
         </View>
+        {blaettert && (
+          <Federnd
+            onPress={() => setBlick(null)}
+            accessibilityRole="button"
+            style={stile.zumTraining}
+          >
+            <Text style={stile.zumTrainingText}>Zurück zum Training</Text>
+          </Federnd>
+        )}
         {zuegeOffen && <Zugliste schritte={runde.linie.slice(0, runde.index)} />}
-        {coachText && (
+        {coachText && !blaettert && (
           <View style={stile.coach}>
             <CoachBauer groesse={54} />
             <View style={stile.coachTexte}>
@@ -322,12 +391,12 @@ export function TrainingSeite() {
             </View>
           </View>
         )}
-        {kommentar ? <Text style={stile.kommentar}>{kommentar}</Text> : null}
+        {kommentar && !blaettert ? <Text style={stile.kommentar}>{kommentar}</Text> : null}
       </ScrollView>
 
       {/* Bedienleiste am Daumen: Tipp, Zugliste und bei Eröffnungen aus der Sammlung „Warum?“. */}
       <View style={[KARTE, stile.unten]}>
-        <Aktion titel="Tipp" aus={!tippMoeglich} onPress={tipp}>
+        <Aktion titel="Tipp" aus={!tippMoeglich || blaettert} onPress={tipp}>
           <Zeichen name="birne" farbe={FARBEN.text} groesse={22} />
         </Aktion>
         <Aktion
@@ -343,7 +412,7 @@ export function TrainingSeite() {
           <Aktion
             trenner
             titel="Warum?"
-            aus={!warumMoeglich}
+            aus={!warumMoeglich || blaettert}
             beschriftung={warum ? `Warum ${zugText(warum.schritt)}?` : 'Warum?'}
             onPress={() => setWarumOffen(true)}
           >
@@ -408,10 +477,13 @@ function Meldung({
   schritt,
   anzeige,
   seite,
+  phase,
 }: {
   schritt: Schritt;
   anzeige: Anzeige | null;
   seite: 'weiss' | 'schwarz';
+  /** Lernphase, steht vorn in der kleinen Zeile („Aus dem Kopf · Weiß am Zug“). */
+  phase?: string | undefined;
 }) {
   const amZug = seite === 'weiss' ? 'Weiß am Zug' : 'Schwarz am Zug';
   if (anzeige?.art === 'richtig') {
@@ -458,16 +530,16 @@ function Meldung({
   const text =
     schritt.art === 'neu'
       ? `Spiel ${zugText(schritt)} – der Pfeil zeigt ihn dir`
-      : schritt.art === 'abfrage'
+      : schritt.art === 'abfrage' && !phase
         ? `${amZug} · ${schritt.frisch ? 'ohne Hilfe' : 'Wiederholung'}`
         : amZug;
   return (
     <View style={stile.meldung}>
       <View style={stile.titelZeile}>
-        {schritt.art !== 'neu' && <Seitenpunkt seite={seite} groesse={18} />}
+        {schritt.art !== 'neu' && <Seitenpunkt seite={seite} groesse={12} />}
         <Text style={stile.meldungTitelGross}>{titel}</Text>
       </View>
-      <Text style={stile.meldungText}>{text}</Text>
+      <Text style={stile.meldungText}>{phase ? `${phase} · ${text}` : text}</Text>
     </View>
   );
 }
@@ -625,17 +697,6 @@ const stile = StyleSheet.create({
     borderColor: FARBEN.lichtkante,
     ...TIEFE,
   },
-  phase: {
-    alignSelf: 'flex-start',
-    marginHorizontal: 20,
-    marginTop: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    backgroundColor: FARBEN.akzentFlaeche,
-  },
-  phaseText: { color: FARBEN.akzent, fontSize: 12, fontWeight: '700', letterSpacing: 0.8 },
-  statusZeileNah: { marginTop: 10 },
   coach: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -651,13 +712,28 @@ const stile = StyleSheet.create({
   coachTexte: { flex: 1, gap: 4 },
   coachTitel: { color: FARBEN.akzent, fontSize: 14, fontWeight: '700' },
   coachInhalt: { color: FARBEN.text, fontSize: 14.5, lineHeight: 21 },
+  // Status ruhiger (Runde 18): links „Dein Zug“ mit Zeile darunter, rechts ◀ ▶.
   statusZeile: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 12,
     marginHorizontal: 20,
-    marginTop: 22,
+    marginTop: 20,
   },
+  statusText: { flex: 1 },
+  blaettern: { flexDirection: 'row', gap: 8 },
+  blickPunkt: { width: 12, height: 12, borderRadius: 6, backgroundColor: FARBEN.textLeise },
+  zumTraining: {
+    alignSelf: 'flex-start',
+    marginHorizontal: 20,
+    marginTop: 14,
+    minHeight: TIPPFLAECHE,
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    borderRadius: 24,
+    backgroundColor: FARBEN.akzentFlaeche,
+  },
+  zumTrainingText: { color: FARBEN.akzentHell, fontSize: 15, fontWeight: '600' },
   zugliste: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginHorizontal: 20, marginTop: 14 },
   zuglisteLeer: { color: FARBEN.textLeise, fontSize: 14, marginHorizontal: 20, marginTop: 14 },
   zugPille: {
@@ -669,8 +745,8 @@ const stile = StyleSheet.create({
   zugPilleText: { color: FARBEN.text, fontSize: 13 },
   meldung: { gap: 4 },
   rueckmeldung: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  titelZeile: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  meldungTitelGross: { color: FARBEN.text, fontSize: 30, fontWeight: '700', letterSpacing: -0.6 },
+  titelZeile: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  meldungTitelGross: { color: FARBEN.text, fontSize: 20, fontWeight: '600', letterSpacing: -0.2 },
   rueckmeldungText: { flex: 1, gap: 2 },
   kreis: {
     width: 32,
@@ -679,7 +755,7 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  meldungTitel: { color: FARBEN.text, fontSize: 22, fontWeight: '700' },
+  meldungTitel: { color: FARBEN.text, fontSize: 20, fontWeight: '600' },
   meldungText: { color: FARBEN.textLeise, fontSize: 14 },
   kommentar: {
     marginHorizontal: 16,
