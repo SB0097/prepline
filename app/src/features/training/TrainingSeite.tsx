@@ -40,6 +40,7 @@ import { FARBEN } from '@/ui/farben';
 import { Zeichen } from '@/ui/symbole';
 import { Text, ZIFFERN_GLEICH } from '@/ui/Text';
 
+import { brettGroesse } from './brettGroesse';
 import { WarumBlase } from './WarumBlase';
 
 import {
@@ -93,7 +94,10 @@ export function TrainingSeite() {
   const db = useDatenbank();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const nurId = id ? Number(id) : undefined;
-  const breite = useWindowDimensions().width;
+  const { width: breite, fontScale } = useWindowDimensions();
+  // Sichtbare Höhe zwischen Kopf und Bedienleiste, bestimmt die Brettgröße auf kleinen Handys.
+  const [bereichHoehe, setBereichHoehe] = useState<number | null>(null);
+  const brett = brettGroesse(breite, bereichHoehe, fontScale);
   const [vorbereitung, setVorbereitung] = useState<Trainingsvorbereitung | null>(null);
   const [ablauf, setAblauf] = useState<Ablauf>({ teilIndex: 0, runde: null, erledigtVorher: 0 });
   const [fehler, setFehler] = useState(0);
@@ -270,11 +274,14 @@ export function TrainingSeite() {
         <Balken anteil={Math.min(1, balken)} hoehe={4} />
       </View>
 
-      <ScrollView contentContainerStyle={stile.inhalt}>
+      <ScrollView
+        contentContainerStyle={stile.inhalt}
+        onLayout={(e) => setBereichHoehe(e.nativeEvent.layout.height)}
+      >
         <Animated.View style={[stile.brett, wackelStil]}>
           <Schachbrett
             fen={anzeige?.art === 'richtig' ? anzeige.fen : schritt.fen}
-            groesse={breite - 32}
+            groesse={brett}
             rundung={14}
             ansicht={teil.rep.seite}
             figurensatz={einstellungen.figurensatz}
@@ -592,7 +599,7 @@ const stile = StyleSheet.create({
   zaehler: { color: FARBEN.textLeise, fontSize: 13, fontWeight: '500' },
   balken: { marginHorizontal: 20, marginTop: 16 },
   inhalt: { paddingBottom: 16 },
-  brett: { marginHorizontal: 16, marginTop: 18 },
+  brett: { alignSelf: 'center', marginTop: 18 },
   phase: {
     alignSelf: 'flex-start',
     marginHorizontal: 20,

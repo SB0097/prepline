@@ -90,6 +90,11 @@ export function Zeilenknopf({
 
 export const RUNDUNG = 22;
 
+/** Kleinste Tippfläche nach den Android-Richtlinien (48 dp). */
+export const TIPPFLAECHE = 48;
+const RUND_AKZENT = 44;
+const RUND_LEISE = 40;
+
 /** Grundform einer Karte: Fläche mit feinem Rand. */
 export const KARTE = {
   backgroundColor: FARBEN.karte,
@@ -197,20 +202,25 @@ export function RundKnopf({
   beschriftung: string;
   art?: 'akzent' | 'leise';
 }) {
+  // Sichtbar bleibt der Kreis (40/44 dp), antippbar sind immer 48 dp (Android-Mindestmaß).
+  // Der negative Rand gleicht die größere Fläche aus, das Layout bleibt gleich.
+  const kreis = art === 'akzent' ? RUND_AKZENT : RUND_LEISE;
+  const ueberstand = -(TIPPFLAECHE - kreis) / 2;
   return (
     <Federnd
       onPress={onPress}
-      hitSlop={10}
       accessibilityRole="button"
       accessibilityLabel={beschriftung}
-      style={[stile.rund, art === 'leise' && stile.rundLeise]}
+      style={[stile.rundFlaeche, { margin: ueberstand }]}
     >
-      {art === 'akzent' && <Verlauf schraeg />}
-      <Zeichen
-        name={symbol}
-        farbe={art === 'akzent' ? FARBEN.textAufAkzent : FARBEN.text}
-        groesse={art === 'akzent' ? 22 : 20}
-      />
+      <View style={[stile.rund, art === 'leise' && stile.rundLeise]}>
+        {art === 'akzent' && <Verlauf schraeg />}
+        <Zeichen
+          name={symbol}
+          farbe={art === 'akzent' ? FARBEN.textAufAkzent : FARBEN.text}
+          groesse={art === 'akzent' ? 22 : 20}
+        />
+      </View>
     </Federnd>
   );
 }
@@ -418,19 +428,25 @@ const stile = StyleSheet.create({
   knopfTextRahmen: { color: FARBEN.text, fontSize: 16, fontWeight: '600' },
   knopfTextVoll: { color: FARBEN.textAufAkzent, fontSize: 18, fontWeight: '700' },
   knopfTextLeise: { color: FARBEN.akzent, fontSize: 16, fontWeight: '600' },
+  rundFlaeche: {
+    width: TIPPFLAECHE,
+    height: TIPPFLAECHE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   rund: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: RUND_AKZENT,
+    height: RUND_AKZENT,
+    borderRadius: RUND_AKZENT / 2,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
     backgroundColor: FARBEN.akzent,
   },
   rundLeise: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: RUND_LEISE,
+    height: RUND_LEISE,
+    borderRadius: RUND_LEISE / 2,
     backgroundColor: FARBEN.karte,
     borderWidth: 1,
     borderColor: FARBEN.rand,
@@ -452,7 +468,8 @@ const stile = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderRadius: 21,
-    paddingVertical: 10,
+    minHeight: TIPPFLAECHE,
+    paddingVertical: 6,
     overflow: 'hidden',
   },
   umschalterText: { color: FARBEN.textLeise, fontSize: 15, fontWeight: '700' },
